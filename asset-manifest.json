@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/TilingTheWorld/static/css/main.fc27ffe1.css",
-    "main.js": "/TilingTheWorld/static/js/main.a052bc69.js",
+    "main.js": "/TilingTheWorld/static/js/main.d4c922cd.js",
     "static/js/453.ed3810f9.chunk.js": "/TilingTheWorld/static/js/453.ed3810f9.chunk.js",
     "static/media/brand-icons.svg": "/TilingTheWorld/static/media/brand-icons.6729d29753e000c17489.svg",
     "static/media/icons.svg": "/TilingTheWorld/static/media/icons.62d9dae4e0040e81c980.svg",
@@ -21,11 +21,11 @@
     "static/media/outline-icons.woff2": "/TilingTheWorld/static/media/outline-icons.687a4990ea22bb1a49d4.woff2",
     "index.html": "/TilingTheWorld/index.html",
     "main.fc27ffe1.css.map": "/TilingTheWorld/static/css/main.fc27ffe1.css.map",
-    "main.a052bc69.js.map": "/TilingTheWorld/static/js/main.a052bc69.js.map",
+    "main.d4c922cd.js.map": "/TilingTheWorld/static/js/main.d4c922cd.js.map",
     "453.ed3810f9.chunk.js.map": "/TilingTheWorld/static/js/453.ed3810f9.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.fc27ffe1.css",
-    "static/js/main.a052bc69.js"
+    "static/js/main.d4c922cd.js"
   ]
 }
