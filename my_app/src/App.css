@@ -16,7 +16,8 @@
 .pageWrapper {
   display: flex;
   justify-content: center;
-  padding: 50px;
+  align-items: center;
+  padding: 70px 50px 50px 50px;
   gap: 20px;
 }
 

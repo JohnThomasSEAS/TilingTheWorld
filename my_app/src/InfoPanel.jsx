@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Icon, Grid, GridRow, GridColumn, Popup as PopupSemantic } from "semantic-ui-react";
+import { Icon, Grid, GridRow, GridColumn, Popup as PopupSemantic, Modal } from "semantic-ui-react";
 import "semantic-ui-css/semantic.min.css";
 import "./InfoPanel.css";
 import Plot from "react-plotly.js";
@@ -8,6 +8,166 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
   const [percentChange, setPercentChange] = useState(0);
   const [priorEmissionsSectors, setPriorEmissionsSectors] = useState([]);
   const [posteriorEmissionsSectors, setPosteriorEmissionsSectors] = useState([]);
+  const [infoModalOpen, setInfoModalOpen] = useState(false);
+
+  const globalMethanePledgeSignatories = [
+    "Albania",
+    "Andorra",
+    "Angola",
+    "Antigua and Barbuda",
+    "Argentina",
+    "Armenia",
+    "Australia",
+    "Austria",
+    "Azerbaijan",
+    "Bahrain",
+    "Bangladesh",
+    "Barbados",
+    "Belgium",
+    "Belize",
+    "Benin",
+    "Bosnia and Herzegovina",
+    "Brazil",
+    "Bulgaria",
+    "Burkina Faso",
+    "Cabo Verde",
+    "Cambodia",
+    "Cameroon",
+    "Canada",
+    "Central African Republic",
+    "Chad",
+    "Chile",
+    "Colombia",
+    "Comoros",
+    "Congo, Democratic Republic of the",
+    "Congo, Republic of the",
+    "Cook Islands",
+    "Costa Rica",
+    "Cote d’Ivoire",
+    "Croatia",
+    "Cuba",
+    "Cyprus",
+    "Czech Republic",
+    "Denmark",
+    "Djibouti",
+    "Dominica",
+    "Dominican Republic",
+    "Ecuador",
+    "Egypt",
+    "El Salvador",
+    "Equatorial Guinea",
+    "Estonia",
+    "Eswatini",
+    "Ethiopia",
+    "Fiji",
+    "Finland",
+    "France",
+    "Gabon",
+    "Gambia",
+    "Georgia",
+    "Germany",
+    "Ghana",
+    "Greece",
+    "Grenada",
+    "Guinea",
+    "Guyana",
+    "Haiti",
+    "Honduras",
+    "Iceland",
+    "Indonesia",
+    "Iraq",
+    "Ireland",
+    "Israel",
+    "Italy",
+    "Jamaica",
+    "Japan",
+    "Jordan",
+    "Kazakhstan",
+    "Kenya",
+    "Kosovo",
+    "Kuwait",
+    "Kyrgyzstan",
+    "Lebanon",
+    "Lesotho",
+    "Liberia",
+    "Libya",
+    "Liechtenstein",
+    "Luxembourg",
+    "Malawi",
+    "Malaysia",
+    "Mali",
+    "Malta",
+    "Marshall Islands",
+    "Mauritania",
+    "Mexico",
+    "Micronesia, Federated States of",
+    "Moldova",
+    "Monaco",
+    "Mongolia",
+    "Montenegro",
+    "Morocco",
+    "Mozambique",
+    "Namibia",
+    "Nauru",
+    "Nepal",
+    "Netherlands",
+    "New Zealand",
+    "Niger",
+    "Nigeria",
+    "Niue",
+    "North Macedonia",
+    "Norway",
+    "Oman",
+    "Pakistan",
+    "Palau",
+    "Panama",
+    "Papua New Guinea",
+    "Peru",
+    "Philippines",
+    "Portugal",
+    "Qatar",
+    "Romania",
+    "Rwanda",
+    "Saint Kitts and Nevis",
+    "Saint Lucia",
+    "Samoa",
+    "San Marino",
+    "São Tomé and Príncipe",
+    "Saudi Arabia",
+    "Senegal",
+    "Serbia",
+    "Seychelles",
+    "Sierra Leone",
+    "Singapore",
+    "Slovakia",
+    "Slovenia",
+    "Solomon Islands",
+    "Somalia",
+    "Spain",
+    "Sri Lanka",
+    "Sudan",
+    "Suriname",
+    "Sweden",
+    "Switzerland",
+    "Tajikistan",
+    "Timor-Leste",
+    "Togo",
+    "Tonga",
+    "Trinidad and Tobago",
+    "Tunisia",
+    "Turkmenistan",
+    "Tuvalu",
+    "Ukraine",
+    "United Arab Emirates",
+    "United Kingdom",
+    "United States of America",
+    "Uruguay",
+    "Uzbekistan",
+    "Vanuatu",
+    "Vietnam",
+    "Yemen",
+    "Zambia",
+  ];
 
   const sectors = ["Reservoirs", "Natural", "Wetlands", "BiomassBurn", "OtherAnth", "Rice", "Wastewater", "Landfills", "Livestock", "Coal", "OilAndGas"];
 
@@ -51,14 +211,25 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
       {!selectedCountry ? (
         <div style={{ margin: "50% 8% auto 10%", display: "flex", justifyContent: "center", border: "dashed 2px grey", padding: "1.5rem" }}>
           <h1 style={{ color: "grey", opacity: "0.4" }}>
-            <Icon name="mouse pointer" /> Click on a country to view its methane emissions data.
+            <Icon name="mouse pointer" />
+            Click on or search for a country to view its methane emissions data.
           </h1>
         </div>
       ) : (
         <>
           <div style={{ display: "flex", justifyContent: "center", marginBottom: "1.2rem", marginTop: "1.2rem", zIndex: "1", position: "relative" }}>
             <div className="country-title">
-              <h2 style={{ textAlign: "center" }}>{selectedCountry}</h2>
+              <h2 style={{ textAlign: "center", position: "relative" }}>
+                {selectedCountry}
+                {globalMethanePledgeSignatories.includes(selectedCountry) && (
+                  <PopupSemantic
+                    content={`${selectedCountry} has joined the Global Methane Pledge, aiming to reduce global methane emissions by at least 30% from 2020 levels by 2030.`}
+                    trigger={
+                      <Icon name="handshake outline" circular inverted size="small" style={{ backgroundColor: "var(--turq) !important", marginLeft: "1.01rem", opacity: "0.8" }} />
+                    }
+                  />
+                )}
+              </h2>
             </div>
           </div>
           {selectEmissions && (
@@ -182,6 +353,27 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
         position="bottom center"
         trigger={<Icon className="downloadIcon" name="download" inverted color="grey" circular onClick={downloadData} />}
       />
+      <PopupSemantic
+        content="Learn more about the data driving this project"
+        position="bottom center"
+        trigger={<Icon className="projectInfoIcon" name="info" inverted color="grey" circular onClick={() => setInfoModalOpen(true)} />}
+      />
+      <Modal open={infoModalOpen} onClose={() => setInfoModalOpen(false)} size="small">
+        <Modal.Header>About the Data</Modal.Header>
+        <Modal.Content>
+          <p>
+            This project uses methane emissions data from various sources, including bottom-up inventories and TROPOMI observations. The prior emissions are estimates from
+            bottom-up inventories, while the posterior emissions are corrected values calculated from TROPOMI observations.
+          </p>
+          <p>
+            The Global Methane Pledge aims to reduce global methane emissions by at least 30% from 2020 levels by 2030. Countries that have joined this pledge are indicated with a
+            handshake icon.
+          </p>
+        </Modal.Content>
+        <Modal.Actions>
+          <Icon name="close" onClick={() => setInfoModalOpen(false)} />
+        </Modal.Actions>
+      </Modal>
     </div>
   );
 }
