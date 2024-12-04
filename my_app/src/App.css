@@ -34,3 +34,17 @@
   width: 50%;
   opacity: 0.5;
 }
+
+/* Style the attribution control */
+.leaflet-control-attribution {
+  background-color: #222 !important; /* Dark background */
+  color: #fff !important; /* White text */
+  font-size: 12px; /* Adjust font size if needed */
+  padding: 5px 10px; /* Add some padding */
+  border-radius: 4px; /* Optional: rounded corners */
+}
+
+.leaflet-control-attribution a {
+  color: var(--turq) !important; /* Optional: Blue links for better contrast */
+  text-decoration: none; /* Remove underline from links */
+}
