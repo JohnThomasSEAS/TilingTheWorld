@@ -6,10 +6,14 @@ import { Icon, Dropdown } from "semantic-ui-react";
 
 const WorldMap = ({ setSelectedCountry, emissionsData }) => {
   const [geojsonData, setGeojsonData] = useState(null); // Base GeoJSON data
+  const [hoveredGeojson, setHoveredGeojson] = useState(null); // Hovered GeoJSON feature
   const [highlightedGeojson, setHighlightedGeojson] = useState(null); // Highlighted GeoJSON feature
   const [searchBarVisible, setSearchBarVisible] = useState(false);
   const [allAvailableCountries, setAllAvailableCountries] = useState([]);
   const [selectedCountrySearch, setSelectedCountrySearch] = useState("");
+
+  const baseLayerRef = useRef();
+  const hoverLayerRef = useRef();
 
   const mapRef = useRef();
 
@@ -27,10 +31,26 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
       .then((data) => setGeojsonData(data));
   }, []);
 
+  const resetAllStyles = () => {
+    if (baseLayerRef.current && hoverLayerRef.current) {
+      baseLayerRef.current.eachLayer((layer) => {
+        baseLayerRef.current.resetStyle(layer);
+      });
+      hoverLayerRef.current.clearLayers();
+    }
+  };
+
   const baseStyle = {
     color: "rgba(200,200,200,0.7)",
     weight: 1,
     fillColor: "rgba(10, 10, 10, 0.1)",
+    fillOpacity: 0.8,
+  };
+
+  const hoverStyle = {
+    color: "rgba(200,200,200,0.7)",
+    weight: 1,
+    fillColor: "rgba(100, 100, 100, 0.5)",
     fillOpacity: 0.8,
   };
 
@@ -42,6 +62,8 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
 
   // Handle click on base GeoJSON to highlight a feature
   const handleFeatureClick = (feature) => {
+    resetAllStyles(); // Reset styles for all features
+
     setSelectedCountry(feature.properties.SOVEREIGNT); // Set selected country
     setHighlightedGeojson({
       type: "FeatureCollection",
@@ -49,8 +71,16 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
     });
   };
 
+  const handleFeatureHover = (feature) => {
+    setHoveredGeojson({
+      type: "FeatureCollection",
+      features: [feature],
+    });
+  };
+
   useEffect(() => {
     if (selectedCountrySearch) {
+      setHoveredGeojson(null);
       const selectedFeature = geojsonData.features.find((feature) => feature.properties.SOVEREIGNT === selectedCountrySearch);
       if (selectedFeature) {
         setSelectedCountry(selectedCountrySearch);
@@ -64,13 +94,20 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
 
   useEffect(() => {
     if (highlightedGeojson) {
+      setHoveredGeojson(null);
       const bounds = L.geoJSON(highlightedGeojson).getBounds();
       mapRef.current.fitBounds(bounds);
     }
   }, [highlightedGeojson]);
 
   return (
-    <div className="tileShadow" style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "700px", width: "50%", position: "relative" }}>
+    <div
+      className="mapContainer tileShadow"
+      style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "700px", width: "50%", position: "relative" }}
+      onMouseLeave={() => {
+        setHoveredGeojson(null); // Clear hover state
+      }}
+    >
       <Icon id="searchIcon" name={!searchBarVisible ? "search" : "close"} color="grey" circular inverted onClick={() => setSearchBarVisible(!searchBarVisible)} />
       {searchBarVisible && (
         <Dropdown
@@ -105,8 +142,24 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
         {/* Base GeoJSON layer */}
         {geojsonData && (
           <GeoJSON
+            ref={baseLayerRef}
             data={geojsonData}
             style={baseStyle}
+            onEachFeature={(feature, layer) => {
+              layer.on({
+                mouseover: () => handleFeatureHover(feature),
+                // click: () => handleFeatureClick(feature),
+              });
+            }}
+          />
+        )}
+        {/* Hovered GeoJSON layer */}
+        {hoveredGeojson && (
+          <GeoJSON
+            ref={hoverLayerRef}
+            key={JSON.stringify(hoveredGeojson)} // Force remount on data change
+            data={hoveredGeojson}
+            style={hoverStyle}
             onEachFeature={(feature, layer) => {
               layer.on({
                 click: () => handleFeatureClick(feature),

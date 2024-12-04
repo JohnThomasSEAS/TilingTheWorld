@@ -209,7 +209,7 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
       </h1>
       <hr />
       {!selectedCountry ? (
-        <div style={{ margin: "50% 8% auto 10%", display: "flex", justifyContent: "center", border: "dashed 2px grey", padding: "1.5rem" }}>
+        <div style={{ margin: "35% 8% auto 10%", display: "flex", justifyContent: "center", border: "dashed 2px grey", padding: "1.5rem" }}>
           <h1 style={{ color: "grey", opacity: "0.4" }}>
             <Icon name="mouse pointer" />
             Click on or search for a country to view its methane emissions data.
