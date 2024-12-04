@@ -88,7 +88,7 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
       )}
       <MapContainer center={[45.505, -0.09]} zoom={2} style={{ height: "100%", width: "100%", borderRadius: "15px" }} ref={mapRef}>
         <TileLayer
-          url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png?api_key=1d04346f-1b65-4a30-9ed0-642a1e47ed48"
+          url={`https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png?api_key=${REACT_APP_STADIA_API_KEY}`}
           attribution='&copy; <a href="https://www.stadiamaps.com/">Stadia Maps</a> contributors &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> contributors &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
         {/* Base GeoJSON layer */}
