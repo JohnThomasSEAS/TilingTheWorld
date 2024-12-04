@@ -17,12 +17,20 @@ function App() {
 
   useEffect(() => {
     // Fetch and parse CSV
-    fetch("/emissions_data2.csv")
-      .then((response) => response.text())
+    const csvPath = `${process.env.PUBLIC_URL}/emissions_data2.csv`;
+
+    fetch(csvPath)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.text();
+      })
       .then((csvText) => {
         const parsedData = Papa.parse(csvText, { header: true, skipEmptyLines: true }).data;
         setEmissionsData(parsedData); // Save parsed data
-      });
+      })
+      .catch((error) => console.error("Error fetching CSV:", error));
   }, []);
 
   return (

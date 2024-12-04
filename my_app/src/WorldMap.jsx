@@ -22,7 +22,7 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
 
   useEffect(() => {
     // Fetch base GeoJSON
-    fetch("/world-countries.geojson")
+    fetch(`${process.env.PUBLIC_URL}/world-countries.geojson`)
       .then((response) => response.json())
       .then((data) => setGeojsonData(data));
   }, []);
