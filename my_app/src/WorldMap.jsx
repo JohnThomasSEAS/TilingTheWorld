@@ -86,7 +86,18 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
           onChange={(e, { value }) => setSelectedCountrySearch(value)}
         />
       )}
-      <MapContainer center={[45.505, -0.09]} zoom={2} style={{ height: "100%", width: "100%", borderRadius: "15px" }} ref={mapRef}>
+      <MapContainer
+        center={[45.505, -0.09]}
+        zoom={2}
+        style={{ height: "100%", width: "100%", borderRadius: "15px" }}
+        ref={mapRef}
+        worldCopyJump={true} // Prevents panning to multiple worlds
+        maxBounds={[
+          [-90, -180], // Southwest corner
+          [90, 180], // Northeast corner
+        ]}
+        maxBoundsViscosity={1.0}
+      >
         <TileLayer
           url={`https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png?api_key=${process.env.REACT_APP_STADIA_API_KEY}`}
           attribution='&copy; <a href="https://www.stadiamaps.com/">Stadia Maps</a> contributors &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> contributors &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

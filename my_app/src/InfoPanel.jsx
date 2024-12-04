@@ -348,11 +348,13 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
           )}
         </>
       )}
-      <PopupSemantic
-        content="Download emissions data in csv format"
-        position="bottom center"
-        trigger={<Icon className="downloadIcon" name="download" inverted color="grey" circular onClick={downloadData} />}
-      />
+      {selectedCountry && (
+        <PopupSemantic
+          content="Download emissions data in csv format"
+          position="bottom center"
+          trigger={<Icon className="downloadIcon" name="download" inverted color="grey" circular onClick={downloadData} />}
+        />
+      )}
       <PopupSemantic
         content="Learn more about the data driving this project"
         position="bottom center"
