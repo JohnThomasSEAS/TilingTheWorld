@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Icon, Grid, GridRow, GridColumn, Popup as PopupSemantic, Modal } from "semantic-ui-react";
+import { Icon, Popup as PopupSemantic, Modal } from "semantic-ui-react";
 import "semantic-ui-css/semantic.min.css";
 import "./InfoPanel.css";
 import Plot from "react-plotly.js";

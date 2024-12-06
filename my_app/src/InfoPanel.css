@@ -83,3 +83,8 @@
   /* background-color: rgb(121, 121, 121);
   color: white; */
 }
+
+.leaflet-control-layers {
+  transform: translateY(50px);
+  background-color: grey;
+}

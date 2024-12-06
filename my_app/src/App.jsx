@@ -17,7 +17,7 @@ function App() {
 
   useEffect(() => {
     // Fetch and parse CSV
-    const csvPath = `${process.env.PUBLIC_URL}/emissions_data2.csv`;
+    const csvPath = `${process.env.PUBLIC_URL}/emissions_data3.csv`;
 
     fetch(csvPath)
       .then((response) => {

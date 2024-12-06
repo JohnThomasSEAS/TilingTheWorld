@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
-import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
+import { MapContainer, TileLayer, GeoJSON, LayersControl, Layers } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { Icon, Dropdown } from "semantic-ui-react";
+import "./InfoPanel.css";
 
 const WorldMap = ({ setSelectedCountry, emissionsData }) => {
   const [geojsonData, setGeojsonData] = useState(null); // Base GeoJSON data
@@ -38,6 +39,61 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
       });
       hoverLayerRef.current.clearLayers();
     }
+  };
+
+  // Match emissions data to a country in the GeoJSON
+  const getEmissionsForCountry = (countryName, type) => {
+    const countryData = emissionsData.find((row) => row.countries === countryName);
+    if (["prior", "posterior"].includes(type)) {
+      return countryData ? parseFloat(type === "posterior" ? countryData.Total_Anth_Post : countryData.Total_Anth_Prior) : 0; // Default to 0 if not found
+    } else if (type === "percentDiff") {
+      return countryData ? (((countryData.Total_Anth_Post - countryData.Total_Anth_Prior) / countryData.Total_Anth_Prior) * 100).toFixed(0) : 0;
+    }
+  };
+
+  // Color scale based on emissions
+  const getChoroColor = (value) => {
+    return value > 4
+      ? "#800026" // Dark red
+      : value > 3
+      ? "#BD0026" // Red
+      : value > 2
+      ? "#E31A1C" // Light red
+      : value > 1
+      ? "#FC4E2A" // Orange
+      : "#FFEDA0"; // Light yellow
+  };
+
+  const getPercentDiffColor = (value) => {
+    return value > 1
+      ? "#800026" // Dark red
+      : value > 0.5
+      ? "#BD0026" // Red
+      : value > 0.25
+      ? "#E31A1C" // Light red
+      : value > 0.1
+      ? "#FC4E2A" // Orange
+      : value > -0.1
+      ? "#FFFFFF" // White
+      : value > -0.25
+      ? "#ADD8E6" // Light blue
+      : value > -0.5
+      ? "#87CEEB" // Sky blue
+      : value > -1
+      ? "#4682B4" // Steel blue
+      : "#00008B"; // Dark blue
+  };
+
+  // Dynamic style function
+  const dynamicStyle = (feature, type) => {
+    const emissions = getEmissionsForCountry(feature.properties.SOVEREIGNT, type);
+
+    return {
+      fillColor: type !== "percentDiff" ? getChoroColor(emissions) : getPercentDiffColor(emissions),
+      color: "rgba(200,200,200,0.7)", // Border color
+      weight: 1,
+      fillOpacity: 0.5,
+    };
   };
 
   const baseStyle = {
@@ -153,6 +209,46 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
             }}
           />
         )}
+
+        {/* Layers control for Choropleth */}
+        {geojsonData && (
+          <LayersControl position="topright">
+            <LayersControl.Overlay name="Total Anth. Emissions (Posterior)" checked={false}>
+              <GeoJSON
+                data={geojsonData}
+                style={(e) => dynamicStyle(e, "posterior")}
+                onEachFeature={(feature, layer) => {
+                  layer.on({
+                    click: () => handleFeatureClick(feature),
+                  });
+                }}
+              />
+            </LayersControl.Overlay>
+            <LayersControl.Overlay name="Total Anth. Emissions (Prior)" checked={false}>
+              <GeoJSON
+                data={geojsonData}
+                style={(e) => dynamicStyle(e, "prior")}
+                onEachFeature={(feature, layer) => {
+                  layer.on({
+                    click: () => handleFeatureClick(feature),
+                  });
+                }}
+              />
+            </LayersControl.Overlay>
+            <LayersControl.Overlay name="Percent Change (Posterior/Prior)" checked={false}>
+              <GeoJSON
+                data={geojsonData}
+                style={(e) => dynamicStyle(e, "percentDiff")}
+                onEachFeature={(feature, layer) => {
+                  layer.on({
+                    click: () => handleFeatureClick(feature),
+                  });
+                }}
+              />
+            </LayersControl.Overlay>
+          </LayersControl>
+        )}
+
         {/* Hovered GeoJSON layer */}
         {hoveredGeojson && (
           <GeoJSON
