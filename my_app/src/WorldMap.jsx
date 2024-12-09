@@ -53,15 +53,18 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
 
   // Color scale based on emissions
   const getChoroColor = (value) => {
-    return value > 4
-      ? "#800026" // Dark red
-      : value > 3
-      ? "#BD0026" // Red
-      : value > 2
-      ? "#E31A1C" // Light red
-      : value > 1
-      ? "#FC4E2A" // Orange
-      : "#FFEDA0"; // Light yellow
+    const maxColor = [228, 0, 0]; // #e40000
+    const minColor = [2, 147, 218]; // #0293da
+
+    const interpolateColor = (value, min, max) => {
+      const ratio = (value - min) / (max - min);
+      const r = Math.round(minColor[0] + ratio * (maxColor[0] - minColor[0]));
+      const g = Math.round(minColor[1] + ratio * (maxColor[1] - minColor[1]));
+      const b = Math.round(minColor[2] + ratio * (maxColor[2] - minColor[2]));
+      return `rgb(${r},${g},${b})`;
+    };
+
+    return interpolateColor(value, 0, 4); // Assuming 0 is the min value and 4 is the max value
   };
 
   const getPercentDiffColor = (value) => {
@@ -224,8 +227,8 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
                   // Add a tooltip for hover
                   if (feature.properties) {
                     layer.bindTooltip(
-                      "<strong>Posterior Emissions:</strong><br /><strong>Region:</strong>",
-                      { permanent: true, direction: "top" } // Tooltip configuration
+                      `<strong>Posterior Anth. Emissions: </strong>${getEmissionsForCountry(feature.properties.SOVEREIGNT, "posterior")}`,
+                      { permanent: false, direction: "top" } // Tooltip configuration
                     );
                   }
                 }}
@@ -241,11 +244,10 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
                   });
                   // Add a tooltip for hover
                   if (feature.properties) {
-                    layer.bindTooltip(
-                      `<strong>Prior Emissions:</strong><br />
-               <strong>Region:</strong>`,
-                      { permanent: false, direction: "top" }
-                    );
+                    layer.bindTooltip(`<strong>Prior Anth. Emissions: </strong>${getEmissionsForCountry(feature.properties.SOVEREIGNT, "prior")}`, {
+                      permanent: false,
+                      direction: "top",
+                    });
                   }
                 }}
               />
