@@ -221,6 +221,13 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
                   layer.on({
                     click: () => handleFeatureClick(feature),
                   });
+                  // Add a tooltip for hover
+                  if (feature.properties) {
+                    layer.bindTooltip(
+                      "<strong>Posterior Emissions:</strong><br /><strong>Region:</strong>",
+                      { permanent: true, direction: "top" } // Tooltip configuration
+                    );
+                  }
                 }}
               />
             </LayersControl.Overlay>
@@ -232,6 +239,14 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
                   layer.on({
                     click: () => handleFeatureClick(feature),
                   });
+                  // Add a tooltip for hover
+                  if (feature.properties) {
+                    layer.bindTooltip(
+                      `<strong>Prior Emissions:</strong><br />
+               <strong>Region:</strong>`,
+                      { permanent: false, direction: "top" }
+                    );
+                  }
                 }}
               />
             </LayersControl.Overlay>
@@ -243,6 +258,14 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
                   layer.on({
                     click: () => handleFeatureClick(feature),
                   });
+                  // Add a tooltip for hover
+                  if (feature.properties) {
+                    layer.bindTooltip(
+                      `<strong>Percent Change:</strong>%<br />
+               <strong>Region:</strong>`,
+                      { permanent: false, direction: "top" }
+                    );
+                  }
                 }}
               />
             </LayersControl.Overlay>
