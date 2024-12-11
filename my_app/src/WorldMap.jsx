@@ -12,11 +12,10 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
   const [searchBarVisible, setSearchBarVisible] = useState(false);
   const [allAvailableCountries, setAllAvailableCountries] = useState([]);
   const [selectedCountrySearch, setSelectedCountrySearch] = useState("");
-  const [activeLayer, setActiveLayer] = useState("Total Anth. Emissions (Posterior)");
+  const [activeLayer, setActiveLayer] = useState("Base Layer");
 
   const baseLayerRef = useRef();
   const hoverLayerRef = useRef();
-  const activateLayerRef = useRef("Total Anth. Emissions (Posterior)");
 
   const mapRef = useRef();
 
@@ -187,13 +186,13 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
 
   const returnColorRamp = () => {
     switch (activeLayer) {
-      case "Percent Change (Posterior/Prior)":
+      case "Percent Change (Posterior/Prior Anthropogenic)":
         return (
           <div id="scaleBar">
             <div id="scaleBarLabel">
               <p>-100%</p>
               <p>0</p>
-              <p>100%</p>
+              <p>100%+</p>
             </div>
             <div
               id="colorRamp"
@@ -214,8 +213,8 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
             ></div>
           </div>
         );
-      case "Total Anth. Emissions (Prior)":
-      case "Total Anth. Emissions (Posterior)":
+      case "Total Anthropogenic Emissions (Prior)":
+      case "Total Anthropogenic Emissions (Posterior)":
         return (
           <div id="scaleBar">
             <div id="scaleBarLabel">
@@ -278,38 +277,30 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
           [90, 180], // Northeast corner
         ]}
         maxBoundsViscosity={1.0}
-        whenCreated={(mapInstance) => {
-          mapInstance.on("baselayerchange", (event) => {
-            // Update the active layer state when the base layer changes
-            setActiveLayer(event.name);
-            console.log("Active Layer:", event.name);
-          });
-        }}
       >
         <LayerChangeHandler onLayerChange={setActiveLayer} />
         <TileLayer
           url={`https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png?api_key=${process.env.REACT_APP_STADIA_API_KEY}`}
           attribution='&copy; <a href="https://www.stadiamaps.com/">Stadia Maps</a> contributors &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> contributors &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
-        {/* Base GeoJSON layer */}
-        {geojsonData && (
-          <GeoJSON
-            ref={baseLayerRef}
-            data={geojsonData}
-            style={baseStyle}
-            onEachFeature={(feature, layer) => {
-              layer.on({
-                mouseover: () => handleFeatureHover(feature),
-                // click: () => handleFeatureClick(feature),
-              });
-            }}
-          />
-        )}
 
         {/* Layers control for Choropleth */}
         {geojsonData && (
           <LayersControl position="topright">
-            <LayersControl.BaseLayer name="Total Anth. Emissions (Posterior)" checked={true}>
+            <LayersControl.BaseLayer name="Base Layer" checked={true}>
+              <GeoJSON
+                ref={baseLayerRef}
+                data={geojsonData}
+                style={baseStyle}
+                onEachFeature={(feature, layer) => {
+                  layer.on({
+                    mouseover: () => handleFeatureHover(feature),
+                    // click: () => handleFeatureClick(feature),
+                  });
+                }}
+              />
+            </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="Total Anthropogenic Emissions (Posterior)">
               <GeoJSON
                 data={geojsonData}
                 style={(e) => dynamicStyle(e, "posterior")}
@@ -327,7 +318,7 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
                 }}
               />
             </LayersControl.BaseLayer>
-            <LayersControl.BaseLayer name="Total Anth. Emissions (Prior)">
+            <LayersControl.BaseLayer name="Total Anthropogenic Emissions (Prior)">
               <GeoJSON
                 data={geojsonData}
                 style={(e) => dynamicStyle(e, "prior")}
@@ -345,7 +336,7 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
                 }}
               />
             </LayersControl.BaseLayer>
-            <LayersControl.BaseLayer name="Percent Change (Posterior/Prior)">
+            <LayersControl.BaseLayer name="Percent Change (Posterior/Prior Anthropogenic)">
               <GeoJSON
                 data={geojsonData}
                 style={(e) => dynamicStyle(e, "percentDiff")}
