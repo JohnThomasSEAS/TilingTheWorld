@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { MapContainer, TileLayer, GeoJSON, LayersControl, Layers } from "react-leaflet";
+import { MapContainer, TileLayer, GeoJSON, LayersControl, Layers, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { Icon, Dropdown } from "semantic-ui-react";
@@ -12,11 +12,35 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
   const [searchBarVisible, setSearchBarVisible] = useState(false);
   const [allAvailableCountries, setAllAvailableCountries] = useState([]);
   const [selectedCountrySearch, setSelectedCountrySearch] = useState("");
+  const [activeLayer, setActiveLayer] = useState("Total Anth. Emissions (Posterior)");
 
   const baseLayerRef = useRef();
   const hoverLayerRef = useRef();
+  const activateLayerRef = useRef("Total Anth. Emissions (Posterior)");
 
   const mapRef = useRef();
+
+  const LayerChangeHandler = ({ onLayerChange }) => {
+    const map = useMap();
+
+    useEffect(() => {
+      if (!map) return;
+
+      const handleBaseLayerChange = (e) => {
+        onLayerChange(e.name);
+        console.log("Active Layer:", e.name);
+      };
+
+      map.on("baselayerchange", handleBaseLayerChange);
+
+      // Cleanup listener on unmount
+      return () => {
+        map.off("baselayerchange", handleBaseLayerChange);
+      };
+    }, [map, onLayerChange]);
+
+    return null;
+  };
 
   useEffect(() => {
     if (emissionsData) {
@@ -53,8 +77,8 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
 
   // Color scale based on emissions
   const getChoroColor = (value) => {
-    const maxColor = [228, 0, 0]; // #e40000
-    const minColor = [2, 147, 218]; // #0293da
+    const maxColor = [179, 2, 2]; // #b30202
+    const minColor = [255, 255, 255]; // #ffffff
 
     const interpolateColor = (value, min, max) => {
       const ratio = (value - min) / (max - min);
@@ -64,27 +88,29 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
       return `rgb(${r},${g},${b})`;
     };
 
-    return interpolateColor(value, 0, 4); // Assuming 0 is the min value and 4 is the max value
+    const maxEmissionValue = 10;
+    if (value > maxEmissionValue) {
+      return `rgb(${maxColor[0]},${maxColor[1]},${maxColor[2]})`;
+    }
+    return interpolateColor(value, 0, maxEmissionValue);
   };
 
   const getPercentDiffColor = (value) => {
     return value > 1
-      ? "#800026" // Dark red
+      ? "#b30202" // Dark red
       : value > 0.5
-      ? "#BD0026" // Red
+      ? "#c84949" // Medium red
       : value > 0.25
-      ? "#E31A1C" // Light red
+      ? "#e29f9f" // Light red
       : value > 0.1
-      ? "#FC4E2A" // Orange
+      ? "#ffffff" // White
       : value > -0.1
-      ? "#FFFFFF" // White
+      ? "#a8c6e4" // Light blue
       : value > -0.25
-      ? "#ADD8E6" // Light blue
+      ? "#4788c5" // Medium blue
       : value > -0.5
-      ? "#87CEEB" // Sky blue
-      : value > -1
-      ? "#4682B4" // Steel blue
-      : "#00008B"; // Dark blue
+      ? "#0057af" // Dark blue
+      : "#00008b"; // Darker blue
   };
 
   // Dynamic style function
@@ -92,10 +118,10 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
     const emissions = getEmissionsForCountry(feature.properties.SOVEREIGNT, type);
 
     return {
-      fillColor: type !== "percentDiff" ? getChoroColor(emissions) : getPercentDiffColor(emissions),
+      fillColor: type !== "percentDiff" ? getChoroColor(emissions) : getPercentDiffColor(emissions / 100),
       color: "rgba(200,200,200,0.7)", // Border color
       weight: 1,
-      fillOpacity: 0.5,
+      fillOpacity: 0.7,
     };
   };
 
@@ -114,7 +140,7 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
   };
 
   const highlightStyle = {
-    weight: 1,
+    weight: 2,
     color: "var(--turq-faint)",
     fillOpacity: 0.2,
   };
@@ -159,6 +185,64 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
     }
   }, [highlightedGeojson]);
 
+  const returnColorRamp = () => {
+    switch (activeLayer) {
+      case "Percent Change (Posterior/Prior)":
+        return (
+          <div id="scaleBar">
+            <div id="scaleBarLabel">
+              <p>-100%</p>
+              <p>0</p>
+              <p>100%</p>
+            </div>
+            <div
+              id="colorRamp"
+              style={{
+                background: `linear-gradient(
+                  to left,
+                  #800026 0%,       /* Dark red */
+                  #BD0026 12.5%,    /* Red */
+                  #E31A1C 25%,      /* Light red */
+                  #FC4E2A 37.5%,    /* Orange */
+                  #FFFFFF 50%,      /* White */
+                  #ADD8E6 62.5%,    /* Light blue */
+                  #87CEEB 75%,      /* Sky blue */
+                  #4682B4 87.5%,    /* Steel blue */
+                  #00008B 100%      /* Dark blue */
+                )`,
+              }}
+            ></div>
+          </div>
+        );
+      case "Total Anth. Emissions (Prior)":
+      case "Total Anth. Emissions (Posterior)":
+        return (
+          <div id="scaleBar">
+            <div id="scaleBarLabel">
+              <p>0</p>
+              <p>5</p>
+              <p>10+</p>
+            </div>
+            <div
+              id="colorRamp"
+              style={{
+                background: `linear-gradient(
+                  to left,
+                  #b30202 0%,       /* Dark red */
+                  #d94848 25%,    /* Medium red */
+                  #e29f9f 50%,      /* Light red */
+                  #f5dada 75%,    /* Very light red */
+                  #ffffff 100%      /* White */
+                )`,
+              }}
+            ></div>
+          </div>
+        );
+      default:
+        return null; // Return null if no match
+    }
+  };
+
   return (
     <div
       className="mapContainer tileShadow"
@@ -168,6 +252,7 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
       }}
     >
       <Icon id="searchIcon" name={!searchBarVisible ? "search" : "close"} color="grey" circular inverted onClick={() => setSearchBarVisible(!searchBarVisible)} />
+      {returnColorRamp()}
       {searchBarVisible && (
         <Dropdown
           id="searchBar"
@@ -193,7 +278,15 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
           [90, 180], // Northeast corner
         ]}
         maxBoundsViscosity={1.0}
+        whenCreated={(mapInstance) => {
+          mapInstance.on("baselayerchange", (event) => {
+            // Update the active layer state when the base layer changes
+            setActiveLayer(event.name);
+            console.log("Active Layer:", event.name);
+          });
+        }}
       >
+        <LayerChangeHandler onLayerChange={setActiveLayer} />
         <TileLayer
           url={`https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png?api_key=${process.env.REACT_APP_STADIA_API_KEY}`}
           attribution='&copy; <a href="https://www.stadiamaps.com/">Stadia Maps</a> contributors &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> contributors &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -216,7 +309,7 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
         {/* Layers control for Choropleth */}
         {geojsonData && (
           <LayersControl position="topright">
-            <LayersControl.Overlay name="Total Anth. Emissions (Posterior)" checked={false}>
+            <LayersControl.BaseLayer name="Total Anth. Emissions (Posterior)" checked={true}>
               <GeoJSON
                 data={geojsonData}
                 style={(e) => dynamicStyle(e, "posterior")}
@@ -233,8 +326,8 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
                   }
                 }}
               />
-            </LayersControl.Overlay>
-            <LayersControl.Overlay name="Total Anth. Emissions (Prior)" checked={false}>
+            </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="Total Anth. Emissions (Prior)">
               <GeoJSON
                 data={geojsonData}
                 style={(e) => dynamicStyle(e, "prior")}
@@ -251,8 +344,8 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
                   }
                 }}
               />
-            </LayersControl.Overlay>
-            <LayersControl.Overlay name="Percent Change (Posterior/Prior)" checked={false}>
+            </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="Percent Change (Posterior/Prior)">
               <GeoJSON
                 data={geojsonData}
                 style={(e) => dynamicStyle(e, "percentDiff")}
@@ -263,14 +356,19 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
                   // Add a tooltip for hover
                   if (feature.properties) {
                     layer.bindTooltip(
-                      `<strong>Percent Change:</strong>%<br />
-               <strong>Region:</strong>`,
-                      { permanent: false, direction: "top" }
+                      `<strong>Percent Change: </strong>${getEmissionsForCountry(feature.properties.SOVEREIGNT, "percentDiff") > 0 ? "+" : ""}${getEmissionsForCountry(
+                        feature.properties.SOVEREIGNT,
+                        "percentDiff"
+                      )}%`,
+                      {
+                        permanent: false,
+                        direction: "top",
+                      }
                     );
                   }
                 }}
               />
-            </LayersControl.Overlay>
+            </LayersControl.BaseLayer>
           </LayersControl>
         )}
 
@@ -294,6 +392,14 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
             key={JSON.stringify(highlightedGeojson)} // Force remount on data change
             data={highlightedGeojson}
             style={highlightStyle}
+            onCeachFeature={(feature, layer) => {
+              if (feature.properties) {
+                layer.bindTooltip(
+                  `<strong>Posterior Anth. Emissions: </strong>${getEmissionsForCountry(feature.properties.SOVEREIGNT, "posterior")}`,
+                  { permanent: false, direction: "top" } // Tooltip configuration
+                );
+              }
+            }}
           />
         )}
       </MapContainer>

@@ -84,7 +84,40 @@
   color: white; */
 }
 
+#scaleBar {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  height: 50px;
+  width: 200px;
+  bottom: 20px;
+  left: 20px;
+  z-index: 1000;
+}
+
+#colorRamp {
+  height: 100%;
+  width: 100%;
+  border: solid white 2px;
+  border-radius: 2px;
+  /* background-color: blue; */
+}
+
+#scaleBarLabel {
+  display: flex;
+  justify-content: space-between;
+}
+
+#scaleBarLabel p {
+  color: white;
+  margin-bottom: 0.5rem;
+}
+
 .leaflet-control-layers {
   transform: translateY(50px);
   background-color: grey;
+}
+
+#testing {
+  color: #980000;
 }
