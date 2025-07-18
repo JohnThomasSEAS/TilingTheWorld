@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import WorldMap from "./WorldMap";
 import InfoPanel from "./InfoPanel";
 import Papa from "papaparse";
+import emissionsDataLocal from "./data/emissions_data3.csv"; // Local CSV file
 
 function App() {
   const [selectedCountry, setSelectedCountry] = useState("");
@@ -11,26 +12,24 @@ function App() {
 
   useEffect(() => {
     // Filter emissions data for selected country
+
     const filteredData = emissionsData.filter((row) => row["countries"] === selectedCountry);
     setSelectedCountryEmissions(filteredData[0]);
   }, [selectedCountry]);
 
   useEffect(() => {
-    // Fetch and parse CSV
-    const csvPath = `${process.env.PUBLIC_URL}/emissions_data3.csv`;
-
-    fetch(csvPath)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.text();
-      })
+    fetch(emissionsDataLocal)
+      .then((res) => res.text())
       .then((csvText) => {
-        const parsedData = Papa.parse(csvText, { header: true, skipEmptyLines: true }).data;
-        setEmissionsData(parsedData); // Save parsed data
+        const parsed = Papa.parse(csvText, {
+          header: true,
+          skipEmptyLines: true,
+        });
+        setEmissionsData(parsed.data);
       })
-      .catch((error) => console.error("Error fetching CSV:", error));
+      .catch((err) => {
+        console.error("Error fetching or parsing CSV:", err);
+      });
   }, []);
 
   return (

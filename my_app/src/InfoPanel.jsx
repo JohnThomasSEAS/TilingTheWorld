@@ -272,7 +272,7 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
                       y: sectors, // Categories on the y-axis
                       type: "bar",
                       name: "Posterior Emissions",
-                      marker: { color: "#1abc9c" },
+                      marker: { color: "var(--turq)" },
                       orientation: "h", // Horizontal bars
                       hovertemplate: sectors.map((sector, index) => {
                         if (sector === "Natural") {

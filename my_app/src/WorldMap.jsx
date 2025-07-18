@@ -4,9 +4,10 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { Icon, Dropdown } from "semantic-ui-react";
 import "./InfoPanel.css";
+import geojsonDataLocal from "./data/world-countries.json";
 
 const WorldMap = ({ setSelectedCountry, emissionsData }) => {
-  const [geojsonData, setGeojsonData] = useState(null); // Base GeoJSON data
+  const [geojsonData, setGeojsonData] = useState(geojsonDataLocal); // Base GeoJSON data
   const [hoveredGeojson, setHoveredGeojson] = useState(null); // Hovered GeoJSON feature
   const [highlightedGeojson, setHighlightedGeojson] = useState(null); // Highlighted GeoJSON feature
   const [searchBarVisible, setSearchBarVisible] = useState(false);
@@ -27,7 +28,6 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
 
       const handleBaseLayerChange = (e) => {
         onLayerChange(e.name);
-        console.log("Active Layer:", e.name);
       };
 
       map.on("baselayerchange", handleBaseLayerChange);
@@ -48,12 +48,12 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
     }
   }, [geojsonData]);
 
-  useEffect(() => {
-    // Fetch base GeoJSON
-    fetch(`${process.env.PUBLIC_URL}/world-countries.geojson`)
-      .then((response) => response.json())
-      .then((data) => setGeojsonData(data));
-  }, []);
+  // useEffect(() => {
+  //   // Fetch base GeoJSON
+  //   fetch(`${process.env.PUBLIC_URL}/world-countries.geojson`)
+  //     .then((response) => response.json())
+  //     .then((data) => setGeojsonData(data));
+  // }, []);
 
   const resetAllStyles = () => {
     if (baseLayerRef.current && hoverLayerRef.current) {
@@ -311,7 +311,7 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
                   // Add a tooltip for hover
                   if (feature.properties) {
                     layer.bindTooltip(
-                      `<strong>Posterior Anth. Emissions: </strong>${getEmissionsForCountry(feature.properties.SOVEREIGNT, "posterior")}`,
+                      `<strong>Posterior Anth. Emissions: </strong>${getEmissionsForCountry(feature.properties.SOVEREIGNT, "posterior")} Tg/yr`,
                       { permanent: false, direction: "top" } // Tooltip configuration
                     );
                   }
@@ -328,7 +328,7 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
                   });
                   // Add a tooltip for hover
                   if (feature.properties) {
-                    layer.bindTooltip(`<strong>Prior Anth. Emissions: </strong>${getEmissionsForCountry(feature.properties.SOVEREIGNT, "prior")}`, {
+                    layer.bindTooltip(`<strong>Prior Anth. Emissions: </strong>${getEmissionsForCountry(feature.properties.SOVEREIGNT, "prior")} Tg/yr`, {
                       permanent: false,
                       direction: "top",
                     });

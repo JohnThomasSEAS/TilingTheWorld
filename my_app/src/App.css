@@ -1,6 +1,8 @@
 :root {
-  --turq: #1abc9c;
-  --turq-faint: rgba(26, 188, 156, 0.8);
+  /* --turq: #1abc9c; */
+  --turq: rgb(206, 159, 30);
+  /* --turq-faint: rgba(26, 188, 156, 0.8); */
+  --turq-faint: rgba(206, 159, 30, 0.8);
 }
 
 .App {
