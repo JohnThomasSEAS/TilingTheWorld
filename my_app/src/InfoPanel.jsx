@@ -169,11 +169,12 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
     "Zambia",
   ];
 
-  const sectors = ["Reservoirs", "Natural", "Wetlands", "BiomassBurn", "OtherAnth", "Rice", "Wastewater", "Landfills", "Livestock", "Coal", "OilAndGas"];
+  // Removed landfills, separated natural into termites and seeps, renamed OilAndGas to OG
+  const sectors = ["Reservoirs", "Termites", "Seeps", "Wetlands", "BiomassBurn", "OtherAnth", "Rice", "Waste", "Livestock", "Coal", "OG"];
 
   useEffect(() => {
     if (selectEmissions) {
-      setPercentChange((((selectEmissions.Total_posterior - selectEmissions.Total_prior) / selectEmissions.Total_prior) * 100).toFixed(0));
+      setPercentChange((((selectEmissions.UNFCCC_total_post - selectEmissions.UNFCCC_total_prior) / selectEmissions.UNFCCC_total_prior) * 100).toFixed(0));
 
       setPriorEmissionsSectors(sectors.map((sector) => selectEmissions[`${sector}_prior`]));
       setPosteriorEmissionsSectors(sectors.map((sector) => selectEmissions[`${sector}_post`]));
@@ -183,7 +184,7 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
   const downloadData = () => {
     const csvContent = [
       ["Sector", "Prior Emissions (Tg/yr)", "Posterior Emissions (Tg/yr)"],
-      ["Total", Number(selectEmissions.Total_prior).toFixed(2), Number(selectEmissions.Total_posterior).toFixed(2)],
+      ["Total", Number(selectEmissions.UNFCCC_total_prior).toFixed(2), Number(selectEmissions.UNFCCC_total_post).toFixed(2)],
       ...sectors.map((sector, index) => [sector, Number(priorEmissionsSectors[index]).toFixed(2), Number(posteriorEmissionsSectors[index]).toFixed(2)]),
       ,
     ]
@@ -243,7 +244,7 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
                       trigger={<Icon name="info" size="tiny" color="grey" inverted circular style={{ position: "absolute", top: "-4px", right: "-24px" }} />}
                     />
                   </p>
-                  <h4 style={{ marginTop: "0.5rem" }}>{Number(selectEmissions.Total_prior).toFixed(2)} Tg/yr</h4>
+                  <h4 style={{ marginTop: "0.5rem" }}>{Number(selectEmissions.UNFCCC_total_prior).toFixed(2)} Tg/yr</h4>
                 </div>
                 <div style={{ textAlign: "center" }}>
                   <p style={{ fontSize: "1.2rem", color: "rgb(210,210,210)", position: "relative" }}>
@@ -254,7 +255,7 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
                     />
                   </p>
                   <h4 style={{ marginTop: "0.5rem" }}>
-                    {Number(selectEmissions.Total_posterior).toFixed(2)} Tg/yr
+                    {Number(selectEmissions.UNFCCC_total_post).toFixed(2)} Tg/yr
                     <span style={{ marginLeft: "1.5rem" }}>
                       ({percentChange > 0 ? <Icon name="arrow up" /> : <Icon name="arrow down" />}
                       {Math.abs(percentChange)}% )
@@ -272,13 +273,10 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
                       y: sectors, // Categories on the y-axis
                       type: "bar",
                       name: "Posterior Emissions",
-                      marker: { color: "var(--turq)" },
+                      marker: { color: "#1abc9c" },
                       orientation: "h", // Horizontal bars
                       hovertemplate: sectors.map((sector, index) => {
-                        if (sector === "Natural") {
-                          // Custom hover template for the specific category
-                          return `Natural emissions come from termites and seeps.<br>Posterior Emissions: %{x:.2f} Tg/yr<extra></extra>`;
-                        } else if (sector === "OtherAnth") {
+                        if (sector === "OtherAnth") {
                           // Custom hover template for the specific category
                           return `Anthropogenic emissions come from varied sources.<br>Posterior Emissions: %{x:.2f} Tg/yr<extra></extra>`;
                         } else {
@@ -295,10 +293,7 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
                       marker: { color: "rgb(130,130,130)" },
                       orientation: "h", // Horizontal bars
                       hovertemplate: sectors.map((sector, index) => {
-                        if (sector === "Natural") {
-                          // Custom hover template for the specific category
-                          return `Natural emissions come from termites and seeps.<br>Prior Emissions: %{x:.2f} Tg/yr<extra></extra>`;
-                        } else if (sector === "OtherAnth") {
+                        if (sector === "OtherAnth") {
                           // Custom hover template for the specific category
                           return `Anthropogenic emissions come from varied sources.<br>Prior Emissions: %{x:.2f} Tg/yr<extra></extra>`;
                         } else {

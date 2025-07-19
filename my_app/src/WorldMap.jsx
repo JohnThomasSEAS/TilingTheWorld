@@ -7,6 +7,7 @@ import "./InfoPanel.css";
 import geojsonDataLocal from "./data/world-countries.json";
 
 const WorldMap = ({ setSelectedCountry, emissionsData }) => {
+  console.log("Emissions Data in worldmap.jsx:", emissionsData);
   const [geojsonData, setGeojsonData] = useState(geojsonDataLocal); // Base GeoJSON data
   const [hoveredGeojson, setHoveredGeojson] = useState(null); // Hovered GeoJSON feature
   const [highlightedGeojson, setHighlightedGeojson] = useState(null); // Highlighted GeoJSON feature
@@ -46,14 +47,7 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
       const countries = emissionsData.map((row) => row["countries"]);
       setAllAvailableCountries(countries);
     }
-  }, [geojsonData]);
-
-  // useEffect(() => {
-  //   // Fetch base GeoJSON
-  //   fetch(`${process.env.PUBLIC_URL}/world-countries.geojson`)
-  //     .then((response) => response.json())
-  //     .then((data) => setGeojsonData(data));
-  // }, []);
+  }, [emissionsData]);
 
   const resetAllStyles = () => {
     if (baseLayerRef.current && hoverLayerRef.current) {
@@ -66,11 +60,16 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
 
   // Match emissions data to a country in the GeoJSON
   const getEmissionsForCountry = (countryName, type) => {
-    const countryData = emissionsData.find((row) => row.countries === countryName);
+    const countryData = emissionsData.find((row) => row.countries == countryName);
+
+    if (!countryData) {
+      return 0; // Return 0 if no data found for the country
+    }
+
     if (["prior", "posterior"].includes(type)) {
-      return countryData ? parseFloat(type === "posterior" ? countryData.Total_Anth_Post : countryData.Total_Anth_Prior) : 0; // Default to 0 if not found
+      return countryData ? parseFloat(type === "posterior" ? countryData["UNFCCC_total_post"] : countryData["UNFCCC_total_prior"]).toFixed(2) : 0; // Default to 0 if not found
     } else if (type === "percentDiff") {
-      return countryData ? (((countryData.Total_Anth_Post - countryData.Total_Anth_Prior) / countryData.Total_Anth_Prior) * 100).toFixed(0) : 0;
+      return countryData ? (((countryData["UNFCCC_total_post"] - countryData["UNFCCC_total_prior"]) / countryData["UNFCCC_total_prior"]) * 100).toFixed(0) : 0;
     }
   };
 
@@ -245,7 +244,7 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
   return (
     <div
       className="mapContainer tileShadow"
-      style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "700px", width: "50%", position: "relative" }}
+      style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "750px", width: "50%", position: "relative" }}
       onMouseLeave={() => {
         setHoveredGeojson(null); // Clear hover state
       }}
@@ -302,6 +301,7 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
             </LayersControl.BaseLayer>
             <LayersControl.BaseLayer name="Total Anthropogenic Emissions (Posterior)">
               <GeoJSON
+                key={`posterior-layer-${emissionsData.length}`}
                 data={geojsonData}
                 style={(e) => dynamicStyle(e, "posterior")}
                 onEachFeature={(feature, layer) => {
@@ -320,6 +320,7 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
             </LayersControl.BaseLayer>
             <LayersControl.BaseLayer name="Total Anthropogenic Emissions (Prior)">
               <GeoJSON
+                key={`prior-layer-${emissionsData.length}`}
                 data={geojsonData}
                 style={(e) => dynamicStyle(e, "prior")}
                 onEachFeature={(feature, layer) => {
@@ -338,6 +339,7 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
             </LayersControl.BaseLayer>
             <LayersControl.BaseLayer name="Percent Change (Posterior/Prior Anthropogenic)">
               <GeoJSON
+                key={`percent-diff-layer-${emissionsData.length}`}
                 data={geojsonData}
                 style={(e) => dynamicStyle(e, "percentDiff")}
                 onEachFeature={(feature, layer) => {
