@@ -32,7 +32,8 @@
 }
 
 #smallBreak {
-  margin-top: 20px;
+  margin-top: 10px;
+  margin-bottom: 0px;
   width: 50%;
   opacity: 0.5;
 }

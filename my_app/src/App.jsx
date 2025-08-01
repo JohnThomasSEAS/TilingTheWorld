@@ -42,7 +42,6 @@ function App() {
           header: true,
           skipEmptyLines: true,
         });
-        console.log("New Emissions Data:", parsed.data);
         setNewEmissionsData(parsed.data);
       })
       .catch((err) => {

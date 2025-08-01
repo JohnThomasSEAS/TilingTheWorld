@@ -70,11 +70,25 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
       return countryData ? parseFloat(type === "posterior" ? countryData["UNFCCC_total_post"] : countryData["UNFCCC_total_prior"]).toFixed(2) : 0; // Default to 0 if not found
     } else if (type === "percentDiff") {
       return countryData ? (((countryData["UNFCCC_total_post"] - countryData["UNFCCC_total_prior"]) / countryData["UNFCCC_total_prior"]) * 100).toFixed(0) : 0;
+    } else if (type === "absoluteDiff") {
+      return countryData ? (countryData["UNFCCC_total_post"] - countryData["UNFCCC_total_prior"]).toFixed(2) : 0;
+    } else if (type === "livestockPost") {
+      return countryData ? parseFloat(countryData["Livestock_post"]).toFixed(2) : 0;
+    } else if (type === "wastePost") {
+      return countryData ? parseFloat(countryData["Waste_post"]).toFixed(2) : 0;
+    } else if (type === "oilGasPost" || type === "OG_post") {
+      return countryData ? parseFloat(countryData["OG_post"]).toFixed(2) : 0;
+    } else if (type === "ricePost") {
+      return countryData ? parseFloat(countryData["Rice_post"]).toFixed(2) : 0;
+    } else if (type === "coalPost") {
+      return countryData ? parseFloat(countryData["Coal_post"]).toFixed(2) : 0;
+    } else if (type === "reservoirPost") {
+      return countryData ? parseFloat(countryData["Reservoirs_post"]).toFixed(2) : 0;
     }
   };
 
   // Color scale based on emissions
-  const getChoroColor = (value) => {
+  const getChoroColor = (value, maxEmissionValue = 10) => {
     const maxColor = [179, 2, 2]; // #b30202
     const minColor = [255, 255, 255]; // #ffffff
 
@@ -86,7 +100,6 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
       return `rgb(${r},${g},${b})`;
     };
 
-    const maxEmissionValue = 10;
     if (value > maxEmissionValue) {
       return `rgb(${maxColor[0]},${maxColor[1]},${maxColor[2]})`;
     }
@@ -100,8 +113,8 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
       ? "#c84949" // Medium red
       : value > 0.25
       ? "#e29f9f" // Light red
-      : value > 0.1
-      ? "#ffffff" // White
+      : value > 0.0
+      ? "rgb(255, 215, 215)" // White
       : value > -0.1
       ? "#a8c6e4" // Light blue
       : value > -0.25
@@ -111,12 +124,46 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
       : "#00008b"; // Darker blue
   };
 
+  const getAbsoluteDiffColor = (value) => {
+    return value > 5
+      ? "#b30202" // Dark red
+      : value > 2.5
+      ? "#c84949" // Medium red
+      : value > 1
+      ? "#e29f9f" // Light red
+      : value > 0.0
+      ? "rgb(255, 215, 215)" // White
+      : value > -0.1
+      ? "#a8c6e4" // Light blue
+      : value > -1
+      ? "#4788c5" // Medium blue
+      : value > -2.5
+      ? "#0057af" // Dark blue
+      : "#00008b"; // Darker blue
+  };
+
   // Dynamic style function
   const dynamicStyle = (feature, type) => {
     const emissions = getEmissionsForCountry(feature.properties.SOVEREIGNT, type);
 
+    let fillColor;
+
+    if (["prior", "posterior", "livestockPost", "wastePost", "oilGasPost", "ricePost", "coalPost", "reservoirPost"].includes(type)) {
+      if (["livestockPost", "wastePost", "oilGasPost", "ricePost", "coalPost"].includes(type)) {
+        fillColor = getChoroColor(emissions, 5); // Use a different max
+      } else if (type === "reservoirPost") {
+        fillColor = getChoroColor(emissions, 2); // Use a different max
+      } else {
+        fillColor = getChoroColor(emissions);
+      }
+    } else if (type === "percentDiff") {
+      fillColor = getPercentDiffColor(emissions / 100);
+    } else if (type === "absoluteDiff") {
+      fillColor = getAbsoluteDiffColor(emissions);
+    }
+
     return {
-      fillColor: type !== "percentDiff" ? getChoroColor(emissions) : getPercentDiffColor(emissions / 100),
+      fillColor: fillColor,
       color: "rgba(200,200,200,0.7)", // Border color
       weight: 1,
       fillOpacity: 0.7,
@@ -184,61 +231,90 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
   }, [highlightedGeojson]);
 
   const returnColorRamp = () => {
-    switch (activeLayer) {
-      case "Percent Change (Posterior/Prior Anthropogenic)":
-        return (
-          <div id="scaleBar">
-            <div id="scaleBarLabel">
-              <p>-100%</p>
-              <p>0</p>
-              <p>100%+</p>
-            </div>
-            <div
-              id="colorRamp"
-              style={{
-                background: `linear-gradient(
-                  to left,
-                  #800026 0%,       /* Dark red */
-                  #BD0026 12.5%,    /* Red */
-                  #E31A1C 25%,      /* Light red */
-                  #FC4E2A 37.5%,    /* Orange */
-                  #FFFFFF 50%,      /* White */
-                  #ADD8E6 62.5%,    /* Light blue */
-                  #87CEEB 75%,      /* Sky blue */
-                  #4682B4 87.5%,    /* Steel blue */
-                  #00008B 100%      /* Dark blue */
-                )`,
-              }}
-            ></div>
-          </div>
-        );
-      case "Total Anthropogenic Emissions (Prior)":
-      case "Total Anthropogenic Emissions (Posterior)":
-        return (
-          <div id="scaleBar">
-            <div id="scaleBarLabel">
-              <p>0</p>
-              <p>5</p>
-              <p>10+</p>
-            </div>
-            <div
-              id="colorRamp"
-              style={{
-                background: `linear-gradient(
-                  to left,
-                  #b30202 0%,       /* Dark red */
-                  #d94848 25%,    /* Medium red */
-                  #e29f9f 50%,      /* Light red */
-                  #f5dada 75%,    /* Very light red */
-                  #ffffff 100%      /* White */
-                )`,
-              }}
-            ></div>
-          </div>
-        );
-      default:
-        return null; // Return null if no match
+    // Determine the maxValue for the current activeLayer
+    let maxValue = 10;
+    if (
+      ["Livestock Emissions (Posterior)", "Waste Emissions (Posterior)", "Oil and Gas Emissions (Posterior)", "Rice Emissions (Posterior)", "Coal Emissions (Posterior)"].includes(
+        activeLayer
+      )
+    ) {
+      maxValue = 5;
+    } else if (activeLayer === "Reservoir Emissions (Posterior)") {
+      maxValue = 2;
+    } else if (
+      activeLayer === "Total Anthropogenic Emissions (Prior)" ||
+      activeLayer === "Total Anthropogenic Emissions (Posterior)" ||
+      activeLayer === "Total UNFCCC Emissions (Prior)" ||
+      activeLayer === "Total UNFCCC Emissions (Posterior)"
+    ) {
+      maxValue = 10;
     }
+
+    // Percent Change (Posterior/Prior Anthropogenic) scale
+    if (activeLayer === "Percent Change (Posterior/Prior Anthropogenic)" || activeLayer === "Percent Change (Posterior/Prior UNFCCC)") {
+      return (
+        <div id="scaleBar" style={{ color: "white" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+            <span>-100%</span>
+            <span>0</span>
+            <span>100%+</span>
+          </div>
+          <div
+            id="colorRamp"
+            style={{
+              background: `linear-gradient(
+                to left,
+                #800026 0%,       /* Dark red */
+                #BD0026 12.5%,    /* Red */
+                #E31A1C 25%,      /* Light red */
+                #FC4E2A 37.5%,    /* Orange */
+                #FFFFFF 50%,      /* White */
+                #ADD8E6 62.5%,    /* Light blue */
+                #87CEEB 75%,      /* Sky blue */
+                #4682B4 87.5%,    /* Steel blue */
+                #00008B 100%      /* Dark blue */
+              )`,
+            }}
+          ></div>
+        </div>
+      );
+    }
+
+    // Choro color scale for emissions layers
+    if (
+      [
+        "Total Anthropogenic Emissions (Prior)",
+        "Total Anthropogenic Emissions (Posterior)",
+        "Total UNFCCC Emissions (Prior)",
+        "Total UNFCCC Emissions (Posterior)",
+        "Livestock Emissions (Posterior)",
+        "Waste Emissions (Posterior)",
+        "Oil and Gas Emissions (Posterior)",
+        "Rice Emissions (Posterior)",
+        "Coal Emissions (Posterior)",
+        "Reservoir Emissions (Posterior)",
+      ].includes(activeLayer)
+    ) {
+      return (
+        <div id="scaleBar" style={{ color: "white" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+            <span>0</span>
+            <span>{maxValue / 2}</span>
+            <span>{maxValue}+</span>
+          </div>
+          <div
+            id="colorRamp"
+            style={{
+              background: `linear-gradient(to right, ${getChoroColor(0, maxValue)}, ${getChoroColor(maxValue, maxValue)})`,
+            }}
+          ></div>
+        </div>
+      );
+    }
+
+    // Absolute/percent diff: could add custom ramps here as needed
+    // Otherwise, return null
+    return null;
   };
 
   return (
@@ -249,6 +325,22 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
         setHoveredGeojson(null); // Clear hover state
       }}
     >
+      <div
+        className="activeLayerLabel"
+        style={{
+          position: "absolute",
+          top: "10px",
+          left: "70px",
+          zIndex: 1000,
+          color: "white",
+          backgroundColor: "rgba(0, 0, 0, 0.7)",
+          padding: "5px",
+          borderRadius: "5px",
+          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.5)",
+        }}
+      >
+        <h1 style={{ fontSize: "1.5rem" }}>{activeLayer}</h1>
+      </div>
       <Icon id="searchIcon" name={!searchBarVisible ? "search" : "close"} color="grey" circular inverted onClick={() => setSearchBarVisible(!searchBarVisible)} />
       {returnColorRamp()}
       {searchBarVisible && (
@@ -299,7 +391,7 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
                 }}
               />
             </LayersControl.BaseLayer>
-            <LayersControl.BaseLayer name="Total Anthropogenic Emissions (Posterior)">
+            <LayersControl.BaseLayer name="Total UNFCCC Emissions (Posterior)">
               <GeoJSON
                 key={`posterior-layer-${emissionsData.length}`}
                 data={geojsonData}
@@ -318,7 +410,7 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
                 }}
               />
             </LayersControl.BaseLayer>
-            <LayersControl.BaseLayer name="Total Anthropogenic Emissions (Prior)">
+            <LayersControl.BaseLayer name="Total UNFCCC Emissions (Prior)">
               <GeoJSON
                 key={`prior-layer-${emissionsData.length}`}
                 data={geojsonData}
@@ -337,7 +429,7 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
                 }}
               />
             </LayersControl.BaseLayer>
-            <LayersControl.BaseLayer name="Percent Change (Posterior/Prior Anthropogenic)">
+            <LayersControl.BaseLayer name="Percent Change (Posterior/Prior UNFCCC)">
               <GeoJSON
                 key={`percent-diff-layer-${emissionsData.length}`}
                 data={geojsonData}
@@ -353,6 +445,164 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
                         feature.properties.SOVEREIGNT,
                         "percentDiff"
                       )}%`,
+                      {
+                        permanent: false,
+                        direction: "top",
+                      }
+                    );
+                  }
+                }}
+              />
+            </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="Absolute Difference (Posterior - Prior UNFCCC)">
+              <GeoJSON
+                key={`absolute-diff-layer-${emissionsData.length}`}
+                data={geojsonData}
+                style={(e) => dynamicStyle(e, "absoluteDiff")}
+                onEachFeature={(feature, layer) => {
+                  layer.on({
+                    click: () => handleFeatureClick(feature),
+                  });
+                  // Add a tooltip for hover
+                  if (feature.properties) {
+                    layer.bindTooltip(
+                      `<strong>Absolute difference: </strong>${getEmissionsForCountry(feature.properties.SOVEREIGNT, "absoluteDiff") > 0 ? "+" : ""}${getEmissionsForCountry(
+                        feature.properties.SOVEREIGNT,
+                        "absoluteDiff"
+                      )} Tg/yr`,
+                      {
+                        permanent: false,
+                        direction: "top",
+                      }
+                    );
+                  }
+                }}
+              />
+            </LayersControl.BaseLayer>
+            <hr />
+            <LayersControl.BaseLayer name="Oil and Gas Emissions (Posterior)">
+              <GeoJSON
+                key={`oilGas-layer-${emissionsData.length}`}
+                data={geojsonData}
+                style={(e) => dynamicStyle(e, "oilGasPost")}
+                onEachFeature={(feature, layer) => {
+                  layer.on({
+                    click: () => handleFeatureClick(feature),
+                  });
+                  // Add a tooltip for hover
+                  if (feature.properties) {
+                    layer.bindTooltip(
+                      `<strong>${feature.properties.SOVEREIGNT} Oil Gas Emissions: </strong>${getEmissionsForCountry(feature.properties.SOVEREIGNT, "oilGasPost")} Tg/yr`,
+                      {
+                        permanent: false,
+                        direction: "top",
+                      }
+                    );
+                  }
+                }}
+              />
+            </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="Livestock Emissions (Posterior)">
+              <GeoJSON
+                key={`livestock-layer-${emissionsData.length}`}
+                data={geojsonData}
+                style={(e) => dynamicStyle(e, "livestockPost")}
+                onEachFeature={(feature, layer) => {
+                  layer.on({
+                    click: () => handleFeatureClick(feature),
+                  });
+                  // Add a tooltip for hover
+                  if (feature.properties) {
+                    layer.bindTooltip(
+                      `<strong>${feature.properties.SOVEREIGNT} Livestock Emissions: </strong>${getEmissionsForCountry(feature.properties.SOVEREIGNT, "livestockPost")} Tg/yr`,
+                      {
+                        permanent: false,
+                        direction: "top",
+                      }
+                    );
+                  }
+                }}
+              />
+            </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="Waste Emissions (Posterior)">
+              <GeoJSON
+                key={`waste-layer-${emissionsData.length}`}
+                data={geojsonData}
+                style={(e) => dynamicStyle(e, "wastePost")}
+                onEachFeature={(feature, layer) => {
+                  layer.on({
+                    click: () => handleFeatureClick(feature),
+                  });
+                  // Add a tooltip for hover
+                  if (feature.properties) {
+                    layer.bindTooltip(
+                      `<strong>${feature.properties.SOVEREIGNT} Waste Emissions: </strong>${getEmissionsForCountry(feature.properties.SOVEREIGNT, "wastePost")} Tg/yr`,
+                      {
+                        permanent: false,
+                        direction: "top",
+                      }
+                    );
+                  }
+                }}
+              />
+            </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="Rice Emissions (Posterior)">
+              <GeoJSON
+                key={`rice-layer-${emissionsData.length}`}
+                data={geojsonData}
+                style={(e) => dynamicStyle(e, "ricePost")}
+                onEachFeature={(feature, layer) => {
+                  layer.on({
+                    click: () => handleFeatureClick(feature),
+                  });
+                  // Add a tooltip for hover
+                  if (feature.properties) {
+                    layer.bindTooltip(
+                      `<strong>${feature.properties.SOVEREIGNT} Rice Emissions: </strong>${getEmissionsForCountry(feature.properties.SOVEREIGNT, "ricePost")} Tg/yr`,
+                      {
+                        permanent: false,
+                        direction: "top",
+                      }
+                    );
+                  }
+                }}
+              />
+            </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="Coal Emissions (Posterior)">
+              <GeoJSON
+                key={`coal-layer-${emissionsData.length}`}
+                data={geojsonData}
+                style={(e) => dynamicStyle(e, "coalPost")}
+                onEachFeature={(feature, layer) => {
+                  layer.on({
+                    click: () => handleFeatureClick(feature),
+                  });
+                  // Add a tooltip for hover
+                  if (feature.properties) {
+                    layer.bindTooltip(
+                      `<strong>${feature.properties.SOVEREIGNT} Coal Emissions: </strong>${getEmissionsForCountry(feature.properties.SOVEREIGNT, "coalPost")} Tg/yr`,
+                      {
+                        permanent: false,
+                        direction: "top",
+                      }
+                    );
+                  }
+                }}
+              />
+            </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="Reservoir Emissions (Posterior)">
+              <GeoJSON
+                key={`reservoir-layer-${emissionsData.length}`}
+                data={geojsonData}
+                style={(e) => dynamicStyle(e, "reservoirPost")}
+                onEachFeature={(feature, layer) => {
+                  layer.on({
+                    click: () => handleFeatureClick(feature),
+                  });
+                  // Add a tooltip for hover
+                  if (feature.properties) {
+                    layer.bindTooltip(
+                      `<strong>${feature.properties.SOVEREIGNT} Reservoir Emissions: </strong>${getEmissionsForCountry(feature.properties.SOVEREIGNT, "reservoirPost")} Tg/yr`,
                       {
                         permanent: false,
                         direction: "top",
