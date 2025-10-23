@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Icon, Popup as PopupSemantic, Modal, Grid, Popup } from "semantic-ui-react";
+import { Icon, Popup as PopupSemantic, Modal, Grid, Popup, Button } from "semantic-ui-react";
 import "semantic-ui-css/semantic.min.css";
 import "./InfoPanel.css";
 import Plot from "react-plotly.js";
@@ -267,7 +267,7 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
             <>
               {/* FIRST ROW */}
               <Grid columns={2} style={{ marginLeft: "1.8rem", marginRight: "1.8rem" }}>
-                <Grid.Row>
+                {/* <Grid.Row>
                   <Grid.Column width={8}>
                     <p style={{ fontSize: "1.2rem", color: "rgb(210,210,210)", position: "relative", marginBottom: "0.1rem" }}>
                       UNFCCC Prior
@@ -294,14 +294,14 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
                       </span>
                     </h4>
                   </Grid.Column>
-                </Grid.Row>
+                </Grid.Row> */}
                 {/* SECOND ROW */}
-                <Grid.Row style={{ borderTop: "1px solid rgb(130,130,130)" }}>
+                <Grid.Row style={{ borderTop: "none" }}>
                   <Grid.Column width={8}>
                     <p style={{ fontSize: "1.2rem", color: "rgb(210,210,210)", position: "relative", marginBottom: "0.1rem" }}>
                       Anthropogenic Prior
                       <PopupSemantic
-                        content="Corrected prior emissions calculated using the IMI with TROPOMI observations."
+                        content="Prior emissions from UNFCCC reports and bottom-up inventories."
                         trigger={<Icon name="info" size="tiny" color="grey" inverted circular style={{ transform: "translateY(-10px) translateX(4px)" }} />}
                       />
                     </p>
@@ -311,7 +311,7 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
                     <p style={{ fontSize: "1.2rem", color: "rgb(210,210,210)", position: "relative", marginBottom: "0.1rem" }}>
                       Anthropogenic Posterior{" "}
                       <PopupSemantic
-                        content="Corrected posterior emissions calculated using the IMI with TROPOMI observations."
+                        content="Posterior emissions calculated by inverse analysis using the IMI with TROPOMI observations."
                         trigger={<Icon name="info" size="tiny" color="grey" inverted circular style={{ transform: "translateY(-10px) translateX(4px)" }} />}
                       />
                     </p>
@@ -356,7 +356,7 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
                 </div>
               </div> */}
 
-              <hr id="smallBreak" />
+              <hr id="smallBreak" style = {{margin: "2rem auto 1.5rem auto"}} />
               <div className="sectoralEmissionsContainer">
                 <Plot
                   style={{ height: "100%", width: "100%" }}
@@ -442,8 +442,15 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
       )}
       <PopupSemantic
         content="Learn more about the data driving this project"
-        position="top center"
+        position="top right"
         trigger={<Icon className="projectInfoIcon" name="info" inverted color="grey" circular onClick={() => setInfoModalOpen(true)} />}
+      />
+      <PopupSemantic
+        content="Paper currently awaiting publication. Check back soon!"
+        position="top right"
+        trigger={
+          <Icon className="projectLinkIcon" name="newspaper" inverted color="grey" circular onClick={() => setInfoModalOpen(true)} />
+          }
       />
       <Modal open={infoModalOpen} onClose={() => setInfoModalOpen(false)} size="small">
         <Modal.Header>About the Project</Modal.Header>
@@ -476,6 +483,9 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
             methane emissions from Sub- Saharan Africa are 40% (9.1 Tg/yr ) larger than UNFCCC reports with the highest intensity of any region. Hydroelectric reservoirs not
             included in UNFCCC reporting contribute 6% of anthropogenic emissions globally (34% in Canada).
           </p>
+          <Button as="a" href="https://zenodo.org/records/17245783" target = "#" primary>
+            Download Data
+          </Button>
         </Modal.Content>
         <Modal.Actions>
           <Icon name="close" onClick={() => setInfoModalOpen(false)} />

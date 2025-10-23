@@ -18,6 +18,7 @@ function App() {
     // Filter emissions data for selected country
 
     const filteredData = newEmissionsData.filter((row) => row["countries"] === selectedCountry);
+    console.log("Trying to filter for!: ", selectedCountry);
     setSelectedCountryEmissions(filteredData[0]);
   }, [selectedCountry]);
 

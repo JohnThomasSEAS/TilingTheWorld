@@ -67,11 +67,11 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
     }
 
     if (["prior", "posterior"].includes(type)) {
-      return countryData ? parseFloat(type === "posterior" ? countryData["UNFCCC_total_post"] : countryData["UNFCCC_total_prior"]).toFixed(2) : 0; // Default to 0 if not found
+      return countryData ? parseFloat(type === "posterior" ? countryData["AnthroTotal_post"] : countryData["UNFCCC_total_prior"]).toFixed(2) : 0; // Default to 0 if not found
     } else if (type === "percentDiff") {
-      return countryData ? (((countryData["UNFCCC_total_post"] - countryData["UNFCCC_total_prior"]) / countryData["UNFCCC_total_prior"]) * 100).toFixed(0) : 0;
+      return countryData ? (((countryData["AnthroTotal_post"] - countryData["UNFCCC_total_prior"]) / countryData["UNFCCC_total_prior"]) * 100).toFixed(0) : 0;
     } else if (type === "absoluteDiff") {
-      return countryData ? (countryData["UNFCCC_total_post"] - countryData["UNFCCC_total_prior"]).toFixed(2) : 0;
+      return countryData ? (countryData["AnthroTotal_post"] - countryData["UNFCCC_total_prior"]).toFixed(2) : 0;
     } else if (type === "livestockPost") {
       return countryData ? parseFloat(countryData["Livestock_post"]).toFixed(2) : 0;
     } else if (type === "wastePost") {
@@ -391,26 +391,7 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
                 }}
               />
             </LayersControl.BaseLayer>
-            <LayersControl.BaseLayer name="Total UNFCCC Emissions (Posterior)">
-              <GeoJSON
-                key={`posterior-layer-${emissionsData.length}`}
-                data={geojsonData}
-                style={(e) => dynamicStyle(e, "posterior")}
-                onEachFeature={(feature, layer) => {
-                  layer.on({
-                    click: () => handleFeatureClick(feature),
-                  });
-                  // Add a tooltip for hover
-                  if (feature.properties) {
-                    layer.bindTooltip(
-                      `<strong>Posterior Anth. Emissions: </strong>${getEmissionsForCountry(feature.properties.SOVEREIGNT, "posterior")} Tg/yr`,
-                      { permanent: false, direction: "top" } // Tooltip configuration
-                    );
-                  }
-                }}
-              />
-            </LayersControl.BaseLayer>
-            <LayersControl.BaseLayer name="Total UNFCCC Emissions (Prior)">
+            <LayersControl.BaseLayer name="Prior Emissions (UNFCCC)">
               <GeoJSON
                 key={`prior-layer-${emissionsData.length}`}
                 data={geojsonData}
@@ -429,6 +410,26 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
                 }}
               />
             </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="Posterior Emissions (TROPOMI)">
+              <GeoJSON
+                key={`posterior-layer-${emissionsData.length}`}
+                data={geojsonData}
+                style={(e) => dynamicStyle(e, "posterior")}
+                onEachFeature={(feature, layer) => {
+                  layer.on({
+                    click: () => handleFeatureClick(feature),
+                  });
+                  // Add a tooltip for hover
+                  if (feature.properties) {
+                    layer.bindTooltip(
+                      `<strong>Posterior Anth. Emissions: </strong>${getEmissionsForCountry(feature.properties.SOVEREIGNT, "posterior")} Tg/yr`,
+                      { permanent: false, direction: "top" } // Tooltip configuration
+                    );
+                  }
+                }}
+              />
+            </LayersControl.BaseLayer>
+            
             <LayersControl.BaseLayer name="Percent Change (Posterior/Prior UNFCCC)">
               <GeoJSON
                 key={`percent-diff-layer-${emissionsData.length}`}
