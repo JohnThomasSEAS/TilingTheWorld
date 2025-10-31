@@ -171,7 +171,7 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
   ];
 
   // Removed landfills, separated natural into termites and seeps, renamed OilAndGas to OG
-  const initialSectors = ["Reservoirs", "Termites", "Seeps", "Wetlands", "BiomassBurn", "OtherAnth", "Rice", "Waste", "Livestock", "Coal", "OG"];
+  const initialSectors = ["Reservoirs", "Other", "Rice", "Waste", "Livestock", "Coal", "Oil-Gas"];
   const [orderedSectors, setOrderedSectors] = useState([]);
 
   useEffect(() => {
@@ -296,7 +296,7 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
                   </Grid.Column>
                 </Grid.Row> */}
                 {/* SECOND ROW */}
-                <Grid.Row style={{ borderTop: "none" }}>
+                <Grid.Row style={{ borderTop: "none", marginLeft: "1.7rem" }}>
                   <Grid.Column width={8}>
                     <p style={{ fontSize: "1.2rem", color: "rgb(210,210,210)", position: "relative", marginBottom: "0.1rem" }}>
                       Anthropogenic Prior
