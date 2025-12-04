@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Icon, Popup as PopupSemantic, Modal, Grid, Popup, Button } from "semantic-ui-react";
+import { Icon, Popup as PopupSemantic, Modal, Grid, Button } from "semantic-ui-react";
 import "semantic-ui-css/semantic.min.css";
 import "./InfoPanel.css";
 import Plot from "react-plotly.js";
@@ -9,6 +9,10 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
   const [anthroPercentChange, setAnthroPercentChange] = useState(0);
   const [priorEmissionsSectors, setPriorEmissionsSectors] = useState([]);
   const [posteriorEmissionsSectors, setPosteriorEmissionsSectors] = useState([]);
+
+  const [postEmissionsSectorsMin, setPostEmissionsSectorsMin] = useState([]);
+  const [postEmissionsSectorsMax, setPostEmissionsSectorsMax] = useState([]);
+
   const [infoModalOpen, setInfoModalOpen] = useState(false);
 
   const globalMethanePledgeSignatories = [
@@ -170,8 +174,6 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
     "Zambia",
   ];
 
-  // Removed landfills, separated natural into termites and seeps, renamed OilAndGas to OG
-  const initialSectors = ["Reservoirs", "Other", "Rice", "Waste", "Livestock", "Coal", "Oil-Gas"];
   const [orderedSectors, setOrderedSectors] = useState([]);
 
   useEffect(() => {
@@ -180,13 +182,18 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
       setAnthroPercentChange((((selectEmissions.AnthroTotal_post - selectEmissions.AnthroTotal_prior) / selectEmissions.AnthroTotal_prior) * 100).toFixed(0));
 
       // Sort sectors and emission arrays in descending order of posterior emissions
+      const initialSectors = ["Reservoirs", "Other", "Rice", "Waste", "Livestock", "Coal", "Oil-Gas"];
       const prior = initialSectors.map((sector) => selectEmissions[`${sector}_prior`]);
       const post = initialSectors.map((sector) => selectEmissions[`${sector}_post`]);
+      const post_min = initialSectors.map((sector) => selectEmissions[`${sector}_post_min`]);
+      const post_max = initialSectors.map((sector) => selectEmissions[`${sector}_post_max`]);
 
       const combined = initialSectors.map((sector, i) => ({
         sector,
         prior: prior[i],
         post: post[i],
+        post_min: post_min[i],
+        post_max: post_max[i]
       }));
 
       combined.sort((a, b) => a.post - b.post);
@@ -194,39 +201,39 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
       setPriorEmissionsSectors(combined.map((d) => d.prior));
       setPosteriorEmissionsSectors(combined.map((d) => d.post));
       setOrderedSectors(combined.map((d) => d.sector));
+      setPostEmissionsSectorsMin(combined.map((d) => d.post_min));
+      setPostEmissionsSectorsMax(combined.map((d) => d.post_max));
     }
   }, [selectEmissions]);
 
-  const downloadData = () => {
-    const csvContent = [
-      ["Sector", "Prior Emissions (Tg/yr)", "Posterior Emissions (Tg/yr)"],
-      ["Total", Number(selectEmissions.UNFCCC_total_prior).toFixed(2), Number(selectEmissions.UNFCCC_total_post).toFixed(2)],
-      ...orderedSectors.map((sector, index) => [sector, Number(priorEmissionsSectors[index]).toFixed(2), Number(posteriorEmissionsSectors[index]).toFixed(2)]),
-      ,
-    ]
-      .map((e) => e.join(","))
-      .join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `${selectedCountry}_emissions.csv`);
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  const handleUrlOpenZenodo = () => {
+    // Specify the URL you want to open
+    const url = 'https://doi.org/10.5281/zenodo.17245782';
+    // Open in a new tab/window
+    window.open(url, '_blank');
+  }
+
+  const handleUrlOpenPaper = () => {
+    // Specify the URL you want to open
+    // before publication
+    //const url = 'https://eartharxiv.org/repository/view/10387/';
+    // after publication 
+    const url = 'http://doi.org/10.1038/s41467-025-67122-8';
+    // Open in a new tab/window
+    window.open(url, '_blank');
+  }
 
   return (
-    <div className="leftInfo tileShadow">
-      {selectEmissions?.__parsed_extra && (
+      {/*{selectEmissions?.__parsed_extra && (*/}
+      {selectEmissions?.sensitivity && (
+        <div style={{ position: "relative" }}>
         <div style={{ position: "relative" }}>
           <div id="sentivitiyTile">
-            Sensitivity: <span>{Number(selectEmissions.__parsed_extra).toFixed(2)}</span>
+            Sensitivity: <span>{Number(selectEmissions.sensitivity).toFixed(2)}</span>
             <PopupSemantic
               content="The sensitivity of the
-                      inversion results to the TROPOMI observations is measured by the
+                      inversion results to the TROPOMI observations as measured by the
                       trace of the averaging kernel matrix."
               position="top left"
               trigger={<Icon name="info" size="small" color="grey" inverted circular style={{ position: "absolute", transform: "scale(0.9)", top: "-8px", right: "-13px" }} />}
@@ -236,7 +243,7 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
       )}
       <h1 style={{ opacity: selectedCountry ? "0.4" : "1", textAlign: "center" }}>
         <Icon name="cloud" style={{ marginRight: "1.5rem" }} />
-        Emissions by Country <span style={{ margin: "auto 15px auto 15px" }}>•</span> 2023
+        Methane Emissions by Country <span style={{ margin: "auto 15px auto 15px" }}>•</span> 2023
       </h1>
       <hr />
       {!selectedCountry ? (
@@ -267,35 +274,6 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
             <>
               {/* FIRST ROW */}
               <Grid columns={2} style={{ marginLeft: "1.8rem", marginRight: "1.8rem" }}>
-                {/* <Grid.Row>
-                  <Grid.Column width={8}>
-                    <p style={{ fontSize: "1.2rem", color: "rgb(210,210,210)", position: "relative", marginBottom: "0.1rem" }}>
-                      UNFCCC Prior
-                      <PopupSemantic
-                        content="Prior taken from the United Nations Framework Convention on Global Change (UNFCCC) inventory. There are large uncertainties and missing observational constrains in this dataset."
-                        trigger={<Icon name="info" size="tiny" color="grey" inverted circular style={{ transform: "translateY(-10px) translateX(4px)" }} />}
-                      />
-                    </p>
-                    <h4 style={{ marginTop: "0.4rem" }}>{Number(selectEmissions.UNFCCC_total_prior).toFixed(2)} Tg/yr</h4>
-                  </Grid.Column>
-                  <Grid.Column width={8}>
-                    <p style={{ fontSize: "1.2rem", color: "rgb(210,210,210)", position: "relative", marginBottom: "0.1rem" }}>
-                      UNFCCC Posterior{" "}
-                      <PopupSemantic
-                        content="Posterior taken from the United Nations Framework Convention on Global Change (UNFCCC) inventory. There are large uncertainties and missing observational constrains in this dataset."
-                        trigger={<Icon name="info" size="tiny" color="grey" inverted circular style={{ transform: "translateY(-10px) translateX(4px)" }} />}
-                      />
-                    </p>
-                    <h4 style={{ marginTop: "0.4rem" }}>
-                      {Number(selectEmissions.UNFCCC_total_post).toFixed(2)} Tg/yr
-                      <span style={{ marginLeft: "1.5rem" }}>
-                        ({percentChange > 0 ? <Icon name="arrow up" /> : <Icon name="arrow down" />}
-                        {Math.abs(percentChange)}% )
-                      </span>
-                    </h4>
-                  </Grid.Column>
-                </Grid.Row> */}
-                {/* SECOND ROW */}
                 <Grid.Row style={{ borderTop: "none", marginLeft: "1.7rem" }}>
                   <Grid.Column width={8}>
                     <p style={{ fontSize: "1.2rem", color: "rgb(210,210,210)", position: "relative", marginBottom: "0.1rem" }}>
@@ -305,7 +283,7 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
                         trigger={<Icon name="info" size="tiny" color="grey" inverted circular style={{ transform: "translateY(-10px) translateX(4px)" }} />}
                       />
                     </p>
-                    <h4 style={{ marginTop: "0.4rem" }}>{Number(selectEmissions.AnthroTotal_prior).toFixed(2)} Tg/yr</h4>
+                    <h4 style={{ marginTop: "0.4rem" }}>{Number(selectEmissions.AnthroTotal_prior).toFixed(1)} Tg/yr</h4>
                   </Grid.Column>
                   <Grid.Column width={8}>
                     <p style={{ fontSize: "1.2rem", color: "rgb(210,210,210)", position: "relative", marginBottom: "0.1rem" }}>
@@ -316,7 +294,7 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
                       />
                     </p>
                     <h4 style={{ marginTop: "0.4rem" }}>
-                      {Number(selectEmissions.AnthroTotal_post).toFixed(2)} Tg/yr
+                      {Number(selectEmissions.AnthroTotal_post).toFixed(1)} Tg/yr
                       <span style={{ marginLeft: "1.5rem" }}>
                         ({anthroPercentChange > 0 ? <Icon name="arrow up" /> : <Icon name="arrow down" />}
                         {Math.abs(anthroPercentChange)}% )
@@ -327,36 +305,7 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
               </Grid>
               {/* SECOND ROW */}
 
-              {/* <div style={{ display: "flex", justifyContent: "left", gap: "20%", marginTop: "1.2rem" }}>
-                <div style={{ textAlign: "left" }}>
-                  <p style={{ fontSize: "1.2rem", color: "rgb(210,210,210)", position: "relative", marginBottom: "0.1rem" }}>
-                    Anthropogenic Prior
-                    <PopupSemantic
-                      content="Corrected prior emissions calculated using the IMI with TROPOMI observations."
-                      trigger={<Icon name="info" size="tiny" color="grey" inverted circular style={{ transform: "translateY(-10px) translateX(4px)" }} />}
-                    />
-                  </p>
-                  <h4 style={{ marginTop: "0.4rem" }}>{Number(selectEmissions.AnthroTotal_prior).toFixed(2)} Tg/yr</h4>
-                </div>
-                <div style={{ textAlign: "left" }}>
-                  <p style={{ fontSize: "1.2rem", color: "rgb(210,210,210)", position: "relative", marginBottom: "0.1rem" }}>
-                    Anthropogenic Posterior{" "}
-                    <PopupSemantic
-                      content="Corrected posterior emissions calculated using the IMI with TROPOMI observations."
-                      trigger={<Icon name="info" size="tiny" color="grey" inverted circular style={{ transform: "translateY(-10px) translateX(4px)" }} />}
-                    />
-                  </p>
-                  <h4 style={{ marginTop: "0.4rem" }}>
-                    {Number(selectEmissions.AnthroTotal_post).toFixed(2)} Tg/yr
-                    <span style={{ marginLeft: "1.5rem" }}>
-                      ({percentChange > 0 ? <Icon name="arrow up" /> : <Icon name="arrow down" />}
-                      {Math.abs(percentChange)}% )
-                    </span>
-                  </h4>
-                </div>
-              </div> */}
-
-              <hr id="smallBreak" style = {{margin: "2rem auto 1.5rem auto"}} />
+              {/*<hr id="smallBreak" style = {{margin: "2rem auto 1.5rem auto"}} />*/}
               <div className="sectoralEmissionsContainer">
                 <Plot
                   style={{ height: "100%", width: "100%" }}
@@ -364,15 +313,24 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
                     {
                       x: posteriorEmissionsSectors,
                       y: orderedSectors,
+                      error_x: {
+                        type: 'data',
+                        symmetric: false,
+                        array: postEmissionsSectorsMax,
+                        arrayminus: postEmissionsSectorsMin,
+                        visible: true,
+                        width: 3,
+                        color: 'dark-grey',
+                      },
                       type: "bar",
                       name: "Posterior Emissions",
                       marker: { color: "#1abc9c" },
                       orientation: "h",
                       hovertemplate: orderedSectors.map((sector, index) => {
                         if (sector === "OtherAnth") {
-                          return `Anthropogenic emissions come from varied sources.<br>Posterior Emissions: %{x:.2f} Tg/yr<extra></extra>`;
+                          return `Anthropogenic emissions come from varied sources.<br>Posterior Emissions: %{x:.1f} Tg/yr<extra></extra>`;
                         } else {
-                          return `Posterior Emissions: %{x:.2f} Tg/yr<extra></extra>`;
+                          return `Posterior Emissions: %{x:.1f} Tg/yr<extra></extra>`;
                         }
                       }),
                     },
@@ -385,9 +343,9 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
                       orientation: "h",
                       hovertemplate: orderedSectors.map((sector, index) => {
                         if (sector === "OtherAnth") {
-                          return `Anthropogenic emissions come from varied sources.<br>Prior Emissions: %{x:.2f} Tg/yr<extra></extra>`;
+                          return `Anthropogenic emissions come from varied sources.<br>Prior Emissions: %{x:.1f} Tg/yr<extra></extra>`;
                         } else {
-                          return `Prior Emissions: %{x:.2f} Tg/yr<extra></extra>`;
+                          return `Prior Emissions: %{x:.1f} Tg/yr<extra></extra>`;
                         }
                       }),
                     },
@@ -433,11 +391,16 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
           )}
         </>
       )}
+
+      <div id="moreInfoTile">
+        Emissions estimates come from inversions of TROPOMI satellite methane observations. Read about the methods and uncertainties in the <a href="http://doi.org/10.1038/s41467-025-67122-8" style={{ color: 'rgb(31,178,139)' }}>paper</a>.
+      </div>
+
       {selectedCountry && (
         <PopupSemantic
-          content="Download emissions data in csv format"
+          content="Download emissions data"
           position="bottom center"
-          trigger={<Icon className="downloadIcon" name="download" inverted color="grey" circular onClick={downloadData} />}
+          trigger={<Icon className="downloadIcon" name="download" inverted color="grey" circular onClick={handleUrlOpenZenodo} />}
         />
       )}
       <PopupSemantic
@@ -446,42 +409,46 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
         trigger={<Icon className="projectInfoIcon" name="info" inverted color="grey" circular onClick={() => setInfoModalOpen(true)} />}
       />
       <PopupSemantic
-        content="Paper currently awaiting publication. Check back soon!"
+        content="Click to read the paper (East et al. 2025, Nature Communications)"
         position="top right"
         trigger={
-          <Icon className="projectLinkIcon" name="newspaper" inverted color="grey" circular onClick={() => setInfoModalOpen(true)} />
+          <Icon className="projectLinkIcon" name="newspaper" inverted color="grey" circular onClick={handleUrlOpenPaper} />
           }
       />
       <Modal open={infoModalOpen} onClose={() => setInfoModalOpen(false)} size="small">
         <Modal.Header>About the Project</Modal.Header>
         <Modal.Content>
           <strong>
-            <a href="#" style={{ color: "inherit", textDecoration: "underline" }}>
+            <a href="http://doi.org/10.1038/s41467-025-67122-8" style={{ color: "inherit", textDecoration: "underline" }}>
               <Icon name="linkify" style={{ textDecoration: "none" }} />
-              National methane emissions at high resolution by inversion of satellite observations using UNFCCC prior estimates
+              Worldwide inference of national methane emissions by inversionofsatellite observations with UNFCCC prior estimates
             </a>
           </strong>
           <br />
           <br />
           <p>
-            James D. East, Daniel J. Jacob , Dylan Jervis, Nicholas Balasus , Lucas A. Estrada , Sarah E. Hancock , Melissa P. Sulprizio , John Thomas , Xiaolin Wang , Zichong Chen
-            , Daniel J. Varon , John Worden
+            James D. East, Daniel J. Jacob, Dylan Jervis, Nicholas Balasus, Lucas A. Estrada, Sarah E. Hancock, Melissa P. Sulprizio, John Thomas, Xiaolin Wang, Zichong Chen, Daniel J. Varon, John Worden
+          </p>
+          <br />
+          <p>
+            Published in <cite>Nature Communications</cite>
           </p>
           <hr />
           <strong>Abstract</strong>
           <br />
           <br />
           <p>
-            Meeting climate policy goals to reduce methane emissions under the Paris Agreement and the Global Methane Pledge requires national emission inventories to set targets
-            and quantify reductions. Individual countries report emissions by sector to the United Nations Framework Convention on Global Change (UNFCCC) but there are large
-            uncertainties and observational constraints are lacking.
-            <br />
-            <br />
-            Here we apply a globally consistent analytical inversion of TROPOMI observations with the open-source Integrated Methane Inversion (IMI) to optimize national emissions
-            at up to 25 km resolution for 161 countries, using UNFCCC reports together with point source information from GHGSat and other satellites. On average across countries,
-            national emissions are 40% larger than UNFCCC reports, with global anthropogenic emissions 17% higher than implied by UNFCCC reporting (31% for oil-gas). Livestock
-            methane emissions from Sub- Saharan Africa are 40% (9.1 Tg/yr ) larger than UNFCCC reports with the highest intensity of any region. Hydroelectric reservoirs not
-            included in UNFCCC reporting contribute 6% of anthropogenic emissions globally (34% in Canada).
+            Meeting climate policy goals to reduce methane emissions under the Paris Agreement and the Global Methane Pledge 
+            requires nations to set targets and quantify reductions. Individual countries report emissions by sector to the 
+            United Nations Framework Convention on Climate Change (UNFCCC) but there are large uncertainties. Here we optimize 
+            2023 national emissions at up to 25 km grid resolution for 161 countries with a globally consistent open-source 
+            framework for inverse analysis of Tropospheric Monitoring Instrument (TROPOMI) satellite observations, using UNFCCC 
+            reports for prior estimates together with point source information from GHGSat and other satellites. We find global 
+            anthropogenic emissions to be 15% higher than UNFCCC reporting (32% for oil-gas), with national emissions more than 
+            50% higher than reporting for a quarter of the countries. Oil-gas emission intensities vary by two orders of magnitude 
+            between countries. Sub-Saharan Africa has the highest livestock emission intensity of any region. Hydroelectric reservoirs, 
+            generally not included in UNFCCC reporting, contribute 6% of anthropogenic emissions globally. The framework allows 
+            updates for subsequent years, enabling monitoring of emission trends and support for improved reporting.
           </p>
           <Button as="a" href="https://zenodo.org/records/17245783" target = "#" primary>
             Download Data
