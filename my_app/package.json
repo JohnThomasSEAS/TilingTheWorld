@@ -1,6 +1,6 @@
 {
   "name": "my_app",
-  "version": "0.1.0",
+  "version": "1.2.0",
   "private": true,
   "dependencies": {
     "@testing-library/jest-dom": "^5.17.0",
@@ -24,7 +24,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d build -b gh-pages-new-data-version-1.1"
+    "deploy": "gh-pages -d build -b gh-pages-new-data-version-1.2.0"
   },
   "eslintConfig": {
     "extends": [
