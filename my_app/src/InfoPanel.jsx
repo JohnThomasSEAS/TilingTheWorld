@@ -225,9 +225,9 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
   }
 
   return (
-      {/*{selectEmissions?.__parsed_extra && (*/}
+    <div className="leftInfo tileShadow">
+
       {selectEmissions?.sensitivity && (
-        <div style={{ position: "relative" }}>
         <div style={{ position: "relative" }}>
           <div id="sentivitiyTile">
             Sensitivity: <span>{Number(selectEmissions.sensitivity).toFixed(2)}</span>
@@ -393,7 +393,7 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
       )}
 
       <div id="moreInfoTile">
-        Emissions estimates come from inversions of TROPOMI satellite methane observations. Read about the methods and uncertainties in the <a href="http://doi.org/10.1038/s41467-025-67122-8" style={{ color: 'rgb(31,178,139)' }}>paper</a>.
+        Emissions estimates come from inversions of TROPOMI satellite methane observations. Read about the methods and uncertainties in the <a href="http://doi.org/10.1038/s41467-025-67122-8" target = "#" style={{ color: 'rgb(31,178,139)' }}>paper</a>.
       </div>
 
       {selectedCountry && (
