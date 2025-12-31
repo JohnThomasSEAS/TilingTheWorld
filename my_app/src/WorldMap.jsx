@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
+// import GeoTiffLayer from "./WorldwideEmissionsLayer.jsx";
 import { MapContainer, TileLayer, GeoJSON, LayersControl, Layers, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { Icon, Dropdown } from "semantic-ui-react";
+// import GeoRasterLayer from "georaster-layer-for-leaflet";
+// import parseGeoraster from "georaster";
+import { Icon, Dropdown, Button } from "semantic-ui-react";
 import "./InfoPanel.css";
 import geojsonDataLocal from "./data/world-countries.json";
 
 const WorldMap = ({ setSelectedCountry, emissionsData }) => {
-  console.log("Emissions Data in worldmap.jsx:", emissionsData);
+  // console.log("Emissions Data in worldmap.jsx:", emissionsData);
   const [geojsonData, setGeojsonData] = useState(geojsonDataLocal); // Base GeoJSON data
   const [hoveredGeojson, setHoveredGeojson] = useState(null); // Hovered GeoJSON feature
   const [highlightedGeojson, setHighlightedGeojson] = useState(null); // Highlighted GeoJSON feature
@@ -20,6 +23,84 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
   const hoverLayerRef = useRef();
 
   const mapRef = useRef();
+  const rasterLayerRef = useRef(null);
+
+  const addRaster = async () => {
+    if (!mapRef.current) {
+      console.warn("Map not ready");
+      return;
+    }
+  }
+
+  //  useEffect(() => {
+  //   if (!mapRef.current) {
+  //     console.warn("Map reference is not available yet.");
+  //     return;
+  //   };
+
+  //   // Remove existing raster layer if present
+  //   if (rasterLayerRef.current) {
+  //     mapRef.current.removeLayer(rasterLayerRef.current);
+  //     rasterLayerRef.current = null;
+  //   }
+
+  //   const rasterLayer = new GeoTIFF("worldwide_emissions.tif", {
+  //     renderer: new GeoTIFF.Plotty({
+  //       colorScale: "viridis",
+  //       clampLow: true,
+  //       clampHigh: true
+  //     }),
+  //     opacity: 0.7,
+  //     mask: geojsonData  // mask by world-countries.geojson
+  //   });
+
+  //   rasterLayer.addTo(mapRef.current);
+  //   rasterLayerRef.current = rasterLayer;
+  // }, [geojsonData]);
+
+  // const addRaster = async () => {
+  //   if (!mapRef.current) {
+  //     console.warn("Map not ready");
+  //     return;
+  //   }
+
+  //   // Remove existing raster
+  //   if (rasterLayerRef.current) {
+  //     mapRef.current.removeLayer(rasterLayerRef.current);
+  //     rasterLayerRef.current = null;
+  //   }
+
+  //   try {
+  //     const response = await fetch("/worldwide_emissions.tif");
+  //     const arrayBuffer = await response.arrayBuffer();
+  //     const georaster = await parseGeoraster(arrayBuffer);
+
+  //     const rasterLayer = new GeoRasterLayer({
+  //       georaster,
+  //       opacity: 0.7,
+  //       resolution: 256,
+  //       pixelValuesToColorFn: (values) => {
+  //         const v = values[0];
+  //         if (v == null) return null;
+
+  //         // Simple color ramp (adjust as needed)
+  //         if (v > 10) return "#800026";
+  //         if (v > 5) return "#BD0026";
+  //         if (v > 1) return "#E31A1C";
+  //         if (v > 0) return "#FC4E2A";
+  //         return null;
+  //       }
+  //     });
+
+  //     rasterLayer.addTo(mapRef.current);
+  //     rasterLayerRef.current = rasterLayer;
+
+  //     console.log("Raster layer added", georaster);
+
+  //   } catch (err) {
+  //     console.error("Failed to load GeoTIFF:", err);
+  //   }
+  // };
 
   const LayerChangeHandler = ({ onLayerChange }) => {
     const map = useMap();
@@ -67,17 +148,17 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
     }
 
     if (["prior", "posterior"].includes(type)) {
-      return countryData ? parseFloat(type === "posterior" ? countryData["AnthroTotal_post"] : countryData["UNFCCC_total_prior"]).toFixed(2) : 0; // Default to 0 if not found
+      return countryData ? parseFloat(type === "posterior" ? countryData["AnthroTotal_post"] : countryData["Total_prior"]).toFixed(2) : 0; // Default to 0 if not found
     } else if (type === "percentDiff") {
-      return countryData ? (((countryData["AnthroTotal_post"] - countryData["UNFCCC_total_prior"]) / countryData["UNFCCC_total_prior"]) * 100).toFixed(0) : 0;
+      return countryData ? (((countryData["AnthroTotal_post"] - countryData["Total_prior"]) / countryData["Total_prior"]) * 100).toFixed(0) : 0;
     } else if (type === "absoluteDiff") {
-      return countryData ? (countryData["AnthroTotal_post"] - countryData["UNFCCC_total_prior"]).toFixed(2) : 0;
+      return countryData ? (countryData["AnthroTotal_post"] - countryData["Total_prior"]).toFixed(2) : 0;
     } else if (type === "livestockPost") {
       return countryData ? parseFloat(countryData["Livestock_post"]).toFixed(2) : 0;
     } else if (type === "wastePost") {
       return countryData ? parseFloat(countryData["Waste_post"]).toFixed(2) : 0;
     } else if (type === "oilGasPost" || type === "OG_post") {
-      return countryData ? parseFloat(countryData["OG_post"]).toFixed(2) : 0;
+      return countryData ? parseFloat(countryData["Oil-Gas_post"]).toFixed(2) : 0;
     } else if (type === "ricePost") {
       return countryData ? parseFloat(countryData["Rice_post"]).toFixed(2) : 0;
     } else if (type === "coalPost") {
@@ -361,7 +442,7 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
         center={[45.505, -0.09]}
         zoom={2}
         style={{ height: "100%", width: "100%", borderRadius: "15px" }}
-        ref={mapRef}
+        ref = {mapRef}
         worldCopyJump={true} // Prevents panning to multiple worlds
         maxBounds={[
           [-90, -180], // Southwest corner
@@ -369,6 +450,7 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
         ]}
         maxBoundsViscosity={1.0}
       >
+        {/* <GeoTiffLayer url="/worldwide_emissions.tif" /> */}
         <LayerChangeHandler onLayerChange={setActiveLayer} />
         <TileLayer
           url={`https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png?api_key=${process.env.REACT_APP_STADIA_API_KEY}`}
@@ -378,6 +460,7 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
         {/* Layers control for Choropleth */}
         {geojsonData && (
           <LayersControl position="topright">
+            
             <LayersControl.BaseLayer name="Base Layer" checked={true}>
               <GeoJSON
                 ref={baseLayerRef}
@@ -615,6 +698,7 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
             </LayersControl.BaseLayer>
           </LayersControl>
         )}
+        {/* <Button id="addRasterButton" onClick={addRaster} style={{ position: "absolute", bottom: "10px", left: "10px", zIndex: 1000 }}>Add Raster Layer</Button> */}
 
         {/* Hovered GeoJSON layer */}
         {hoveredGeojson && (
@@ -652,3 +736,4 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
 };
 
 export default WorldMap;
+

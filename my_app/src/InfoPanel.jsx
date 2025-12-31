@@ -320,7 +320,7 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
                         arrayminus: postEmissionsSectorsMin,
                         visible: true,
                         width: 3,
-                        color: 'dark-grey',
+                        color: 'white',
                       },
                       type: "bar",
                       name: "Posterior Emissions",
