@@ -8,9 +8,9 @@ import L from "leaflet";
 import { Icon, Dropdown, Button } from "semantic-ui-react";
 import "./InfoPanel.css";
 import geojsonDataLocal from "./data/world-countries.json";
+import tester from "./data/country_emissions/Turkmenistan_masked.json";
 
-const WorldMap = ({ setSelectedCountry, emissionsData }) => {
-  // console.log("Emissions Data in worldmap.jsx:", emissionsData);
+const WorldMap = ({ setSelectedCountry, emissionsData, countryEmissionsData }) => {
   const [geojsonData, setGeojsonData] = useState(geojsonDataLocal); // Base GeoJSON data
   const [hoveredGeojson, setHoveredGeojson] = useState(null); // Hovered GeoJSON feature
   const [highlightedGeojson, setHighlightedGeojson] = useState(null); // Highlighted GeoJSON feature
@@ -18,6 +18,7 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
   const [allAvailableCountries, setAllAvailableCountries] = useState([]);
   const [selectedCountrySearch, setSelectedCountrySearch] = useState("");
   const [activeLayer, setActiveLayer] = useState("Base Layer");
+  const [countryEmissMaxValue, setCountryEmissMaxValue] = useState(0);
 
   const baseLayerRef = useRef();
   const hoverLayerRef = useRef();
@@ -25,82 +26,21 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
   const mapRef = useRef();
   const rasterLayerRef = useRef(null);
 
-  const addRaster = async () => {
-    if (!mapRef.current) {
-      console.warn("Map not ready");
-      return;
+  const countryKey =
+  countryEmissionsData?.features?.length
+    ? `country-${countryEmissionsData.features.length}`
+    : "empty";
+
+  // Get max of incoming country emissions data
+  useEffect(() => {
+    if (countryEmissionsData && countryEmissionsData.features) {
+      const emissionsValues = countryEmissionsData.features
+        .map((feature) => feature.properties.emissions)
+        .filter((value) => value !== null && value !== undefined);
+      const maxValue = Math.max(...emissionsValues);
+      setCountryEmissMaxValue(maxValue);
     }
-  }
-
-  //  useEffect(() => {
-  //   if (!mapRef.current) {
-  //     console.warn("Map reference is not available yet.");
-  //     return;
-  //   };
-
-  //   // Remove existing raster layer if present
-  //   if (rasterLayerRef.current) {
-  //     mapRef.current.removeLayer(rasterLayerRef.current);
-  //     rasterLayerRef.current = null;
-  //   }
-
-  //   const rasterLayer = new GeoTIFF("worldwide_emissions.tif", {
-  //     renderer: new GeoTIFF.Plotty({
-  //       colorScale: "viridis",
-  //       clampLow: true,
-  //       clampHigh: true
-  //     }),
-  //     opacity: 0.7,
-  //     mask: geojsonData  // mask by world-countries.geojson
-  //   });
-
-  //   rasterLayer.addTo(mapRef.current);
-  //   rasterLayerRef.current = rasterLayer;
-  // }, [geojsonData]);
-
-  // const addRaster = async () => {
-  //   if (!mapRef.current) {
-  //     console.warn("Map not ready");
-  //     return;
-  //   }
-
-  //   // Remove existing raster
-  //   if (rasterLayerRef.current) {
-  //     mapRef.current.removeLayer(rasterLayerRef.current);
-  //     rasterLayerRef.current = null;
-  //   }
-
-  //   try {
-  //     const response = await fetch("/worldwide_emissions.tif");
-  //     const arrayBuffer = await response.arrayBuffer();
-  //     const georaster = await parseGeoraster(arrayBuffer);
-
-  //     const rasterLayer = new GeoRasterLayer({
-  //       georaster,
-  //       opacity: 0.7,
-  //       resolution: 256,
-  //       pixelValuesToColorFn: (values) => {
-  //         const v = values[0];
-  //         if (v == null) return null;
-
-  //         // Simple color ramp (adjust as needed)
-  //         if (v > 10) return "#800026";
-  //         if (v > 5) return "#BD0026";
-  //         if (v > 1) return "#E31A1C";
-  //         if (v > 0) return "#FC4E2A";
-  //         return null;
-  //       }
-  //     });
-
-  //     rasterLayer.addTo(mapRef.current);
-  //     rasterLayerRef.current = rasterLayer;
-
-  //     console.log("Raster layer added", georaster);
-
-  //   } catch (err) {
-  //     console.error("Failed to load GeoTIFF:", err);
-  //   }
-  // };
+  }, [countryEmissionsData]);
 
   const LayerChangeHandler = ({ onLayerChange }) => {
     const map = useMap();
@@ -168,8 +108,15 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
     }
   };
 
+  const getOpacityRamp = (value, maxValue, minOpacity = 0.35, maxOpacity = 0.9) => {
+  if (!value || value <= 0) return 0;
+
+  const ratio = Math.min(value / maxValue, 1);
+  return minOpacity + ratio * (maxOpacity - minOpacity);
+};
+
   // Color scale based on emissions
-  const getChoroColor = (value, maxEmissionValue = 10) => {
+  const getChoroColor = (value, maxEmissionValue = 10, opacity = 1) => {
     const maxColor = [179, 2, 2]; // #b30202
     const minColor = [255, 255, 255]; // #ffffff
 
@@ -178,11 +125,11 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
       const r = Math.round(minColor[0] + ratio * (maxColor[0] - minColor[0]));
       const g = Math.round(minColor[1] + ratio * (maxColor[1] - minColor[1]));
       const b = Math.round(minColor[2] + ratio * (maxColor[2] - minColor[2]));
-      return `rgb(${r},${g},${b})`;
+      return `rgba(${r},${g},${b},${opacity})`;
     };
 
     if (value > maxEmissionValue) {
-      return `rgb(${maxColor[0]},${maxColor[1]},${maxColor[2]})`;
+      return `rgba(${maxColor[0]},${maxColor[1]},${maxColor[2]},${opacity})`;
     }
     return interpolateColor(value, 0, maxEmissionValue);
   };
@@ -251,11 +198,40 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
     };
   };
 
+  const dynamicStyleCountryEmissions = (feature) => {
+      const emissions = feature.properties.emissions;
+
+      if (!emissions || emissions <= 0) {
+        return {
+          fillOpacity: 0,
+          opacity: 0,
+        };
+      }
+
+      const maxValue = countryEmissMaxValue || 0.005;
+      const opacity = getOpacityRamp(emissions, maxValue);
+      const fillColor = getChoroColor(emissions, maxValue, opacity);
+
+      return {
+        fillColor,
+        color: "rgba(200,200,200,0.05)",
+        weight: 0.5,
+        fillOpacity: opacity,
+      };
+};
+
   const baseStyle = {
     color: "rgba(200,200,200,0.7)",
     weight: 1,
     fillColor: "rgba(10, 10, 10, 0.1)",
     fillOpacity: 0.8,
+  };
+
+  const testStyle = {
+    fillColor: getChoroColor(0, 0.005),
+    color: "rgba(200,200,200,0.7)",
+    weight: 1,
+    fillOpacity: 0.7,
   };
 
   const hoverStyle = {
@@ -268,7 +244,7 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
   const highlightStyle = {
     weight: 2,
     color: "var(--turq-faint)",
-    fillOpacity: 0.2,
+    fillOpacity: 0.05,
   };
 
   // Handle click on base GeoJSON to highlight a feature
@@ -450,7 +426,7 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
         ]}
         maxBoundsViscosity={1.0}
       >
-        {/* <GeoTiffLayer url="/worldwide_emissions.tif" /> */}
+
         <LayerChangeHandler onLayerChange={setActiveLayer} />
         <TileLayer
           url={`https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png?api_key=${process.env.REACT_APP_STADIA_API_KEY}`}
@@ -460,6 +436,23 @@ const WorldMap = ({ setSelectedCountry, emissionsData }) => {
         {/* Layers control for Choropleth */}
         {geojsonData && (
           <LayersControl position="topright">
+
+            {/* TEST */}
+            {countryEmissionsData && Object.keys(countryEmissionsData).length > 0 && (
+
+            <LayersControl.Overlay name="Highlighted Country" checked={true}>
+              <GeoJSON
+                data={countryEmissionsData}
+                filter={(feature) => feature.properties.emissions !== null && feature.properties.emissions > 0}
+                style={(e) => dynamicStyleCountryEmissions(e, "emissions")}
+                key = {`country-emissions-layer-${countryKey}`}
+                //   layer.on({
+                //     click: () => handleFeatureClick(feature),
+                //   });
+                // }}
+              />
+            </LayersControl.Overlay>
+            )}
             
             <LayersControl.BaseLayer name="Base Layer" checked={true}>
               <GeoJSON

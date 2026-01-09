@@ -11,6 +11,7 @@ function App() {
   //const [emissionsData, setEmissionsData] = useState([]);
   const [newEmissionsData, setNewEmissionsData] = useState([]);
   const [selectedCountryEmissions, setSelectedCountryEmissions] = useState([]);
+  const [countryEmissionsData, setCountryEmissionsData] = useState({});
 
   //const newEmissionsDataUrl = process.env.PUBLIC_URL + "/emissions_data_new.csv";
 
@@ -19,6 +20,23 @@ function App() {
     const filteredData = newEmissionsData.filter((row) => row["countries"] == selectedCountry);
     console.log("Trying to filter for!: ", selectedCountry);
     setSelectedCountryEmissions(filteredData[0]);
+
+    if(!selectedCountry) return;
+
+    console.log("Fetching country emissions data for:", selectedCountry + "_masked.json");
+
+    let countryNameFixed = selectedCountry.replace(' ', '_').replace(',', '').replace('.', '').replace("'", '');
+
+    fetch(`/data/country_emissions/${countryNameFixed}_masked.json`)
+      .then((res) => res.json())
+      .then((data) => {
+        setCountryEmissionsData(data);
+      })
+      .catch((err) => {
+        console.log("Error fetching country emissions data:", err);
+      });
+
+
   }, [selectedCountry]);
 
   useEffect(() => {
@@ -40,7 +58,7 @@ function App() {
     <div className="App">
       <div className="pageWrapper">
         <InfoPanel selectedCountry={selectedCountry} selectEmissions={selectedCountryEmissions} />
-        <WorldMap selectedCountry={selectedCountry} setSelectedCountry={setSelectedCountry} emissionsData={newEmissionsData} />
+        <WorldMap selectedCountry={selectedCountry} setSelectedCountry={setSelectedCountry} emissionsData={newEmissionsData} countryEmissionsData={countryEmissionsData} />
       </div>
     </div>
   );
