@@ -10,15 +10,16 @@ import "./InfoPanel.css";
 import geojsonDataLocal from "./data/world-countries.json";
 import tester from "./data/country_emissions/Turkmenistan_masked.json";
 
-const WorldMap = ({ setSelectedCountry, emissionsData, countryEmissionsData }) => {
+const WorldMap = ({ selectedCountry, setSelectedCountry, emissionsData, countryEmissionsData }) => {
   const [geojsonData, setGeojsonData] = useState(geojsonDataLocal); // Base GeoJSON data
   const [hoveredGeojson, setHoveredGeojson] = useState(null); // Hovered GeoJSON feature
   const [highlightedGeojson, setHighlightedGeojson] = useState(null); // Highlighted GeoJSON feature
   const [searchBarVisible, setSearchBarVisible] = useState(false);
   const [allAvailableCountries, setAllAvailableCountries] = useState([]);
   const [selectedCountrySearch, setSelectedCountrySearch] = useState("");
-  const [activeLayer, setActiveLayer] = useState("Base Layer");
+  const [activeLayer, setActiveLayer] = useState("Base Layer (Gridded Emissions)");
   const [countryEmissMaxValue, setCountryEmissMaxValue] = useState(0);
+  const [gridEmissionsOpacity, setGridEmissionsOpacity] = useState(75);
 
   const baseLayerRef = useRef();
   const hoverLayerRef = useRef();
@@ -209,14 +210,18 @@ const WorldMap = ({ setSelectedCountry, emissionsData, countryEmissionsData }) =
       }
 
       const maxValue = countryEmissMaxValue || 0.005;
+
+      // Returns scaled opacity based on emission value
       const opacity = getOpacityRamp(emissions, maxValue);
+      const sliderOpacity = gridEmissionsOpacity / 100;
+      const scaledOpacity = opacity * (sliderOpacity);
       const fillColor = getChoroColor(emissions, maxValue, opacity);
 
       return {
         fillColor,
         color: "rgba(200,200,200,0.05)",
         weight: 0.5,
-        fillOpacity: opacity,
+        fillOpacity: scaledOpacity,
       };
 };
 
@@ -398,7 +403,16 @@ const WorldMap = ({ setSelectedCountry, emissionsData, countryEmissionsData }) =
       >
         <h1 style={{ fontSize: "1.5rem" }}>{activeLayer}</h1>
       </div>
+      
       <Icon id="searchIcon" name={!searchBarVisible ? "search" : "close"} color="grey" circular inverted onClick={() => setSearchBarVisible(!searchBarVisible)} />
+
+      {selectedCountry && activeLayer == "Base Layer (Gridded Emissions)" && (
+        <div style = {{backgroundColor: "red"}}>
+          <h4 style={{ position: "absolute", top: "24%", left: "-55px", color: "white", zIndex: 1000, transform: "rotate(-90deg)" }}>Emissions Opacity</h4>
+          <input type="range" id="rangeSlider" min="0" max="100" value = {gridEmissionsOpacity} onChange = {(e) => setGridEmissionsOpacity(e.target.value)} style={{ display: selectedCountry ? "block" : "none" }} />
+        </div>
+      )}
+
       {returnColorRamp()}
       {searchBarVisible && (
         <Dropdown
@@ -438,23 +452,27 @@ const WorldMap = ({ setSelectedCountry, emissionsData, countryEmissionsData }) =
           <LayersControl position="topright">
 
             {/* TEST */}
-            {countryEmissionsData && Object.keys(countryEmissionsData).length > 0 && (
+            {countryEmissionsData && Object.keys(countryEmissionsData).length > 0 && activeLayer == "Base Layer (Gridded Emissions)" && (
 
-            <LayersControl.Overlay name="Highlighted Country" checked={true}>
+            // <LayersControl.Overlay name="Highlighted Country" checked={true}>
               <GeoJSON
+                id = "countryEmissionsLayer"
                 data={countryEmissionsData}
                 filter={(feature) => feature.properties.emissions !== null && feature.properties.emissions > 0}
                 style={(e) => dynamicStyleCountryEmissions(e, "emissions")}
-                key = {`country-emissions-layer-${countryKey}`}
-                //   layer.on({
-                //     click: () => handleFeatureClick(feature),
-                //   });
-                // }}
+                key = {`country-emissions-layer-${countryKey}-${gridEmissionsOpacity}`}
+                onEachFeature={(feature, layer) => {
+                if (feature.properties) {
+                    layer.bindTooltip(`<strong>Prior Anth. Emissions: </strong>${feature.properties.emissions.toFixed(4)} Tg/yr`, {
+                      permanent: false,
+                      direction: "top",
+                    });
+                  }
+                }}
               />
-            </LayersControl.Overlay>
             )}
             
-            <LayersControl.BaseLayer name="Base Layer" checked={true}>
+            <LayersControl.BaseLayer name="Base Layer (Gridded Emissions)" checked={true}>
               <GeoJSON
                 ref={baseLayerRef}
                 data={geojsonData}
@@ -462,7 +480,6 @@ const WorldMap = ({ setSelectedCountry, emissionsData, countryEmissionsData }) =
                 onEachFeature={(feature, layer) => {
                   layer.on({
                     mouseover: () => handleFeatureHover(feature),
-                    // click: () => handleFeatureClick(feature),
                   });
                 }}
               />

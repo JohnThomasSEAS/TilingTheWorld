@@ -85,6 +85,20 @@
   color: white; */
 }
 
+#rangeSlider {
+  width: 200px;
+  margin: 0 auto;
+  position: absolute;
+  top: 25%;
+  left: -75px;
+  z-index: 1000;
+  rotate: -90deg;
+}
+
+#rangeSlider {
+  accent-color: var(--turq);
+}
+
 #scaleBar {
   position: absolute;
   display: flex;
