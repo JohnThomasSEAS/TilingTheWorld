@@ -12,6 +12,8 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
 
   const [postEmissionsSectorsMin, setPostEmissionsSectorsMin] = useState([]);
   const [postEmissionsSectorsMax, setPostEmissionsSectorsMax] = useState([]);
+  const [postEmissionsSectorsMinTrue, setPostEmissionsSectorsMinTrue] = useState([]);
+  const [postEmissionsSectorsMaxTrue, setPostEmissionsSectorsMaxTrue] = useState([]);
 
   const [infoModalOpen, setInfoModalOpen] = useState(false);
 
@@ -203,6 +205,8 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
       setOrderedSectors(combined.map((d) => d.sector));
       setPostEmissionsSectorsMin(combined.map((d) => d.post_min));
       setPostEmissionsSectorsMax(combined.map((d) => d.post_max));
+      setPostEmissionsSectorsMinTrue(combined.map((d) => Number(d.post) - Number(d.post_min)));
+      setPostEmissionsSectorsMaxTrue(combined.map((d) => Number(d.post) + Number(d.post_max)));
     }
   }, [selectEmissions]);
 
@@ -313,6 +317,7 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
                     {
                       x: posteriorEmissionsSectors,
                       y: orderedSectors,
+                      customdata: postEmissionsSectorsMinTrue.map((_, i) => [postEmissionsSectorsMinTrue[i],postEmissionsSectorsMaxTrue[i]]),
                       error_x: {
                         type: 'data',
                         symmetric: false,
@@ -330,7 +335,9 @@ function InfoPanel({ selectedCountry, selectEmissions }) {
                         if (sector === "OtherAnth") {
                           return `Anthropogenic emissions come from varied sources.<br>Posterior Emissions: %{x:.1f} Tg/yr<extra></extra>`;
                         } else {
-                          return `Posterior Emissions: %{x:.1f} Tg/yr<extra></extra>`;
+                          return "Posterior Emissions: %{x:.2f} Tg/yr<br>" +
+                            "Uncertainty: %{customdata[0]:.3f} – %{customdata[1]:.3f} Tg/yr" +
+                            "<extra></extra>";
                         }
                       }),
                     },

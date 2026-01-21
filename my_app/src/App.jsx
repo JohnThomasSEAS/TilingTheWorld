@@ -23,9 +23,9 @@ function App() {
 
     if(!selectedCountry) return;
 
-    console.log("Fetching country emissions data for:", selectedCountry + "_masked.json");
-
-    let countryNameFixed = selectedCountry.replace(' ', '_').replace(',', '').replace('.', '').replace("'", '');
+    
+    let countryNameFixed = selectedCountry.replace(/ /g, '_').replace(/,/g, '').replace(/\./g, '').replace(/'/g, '');
+    console.log("Fetching country emissions data for:", countryNameFixed + "_masked.json");
 
     fetch(`/data/country_emissions/${countryNameFixed}_masked.json`)
       .then((res) => res.json())
